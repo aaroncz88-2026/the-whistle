@@ -89,72 +89,118 @@
     ctx.restore();
   }
 
+  function joint(x, y) { return { x, y }; }
+  function leg(kx, ky, fx, fy) { return { knee: joint(kx, ky), foot: joint(fx, fy) }; }
+  function arm(ex, ey, hx, hy) { return { elbow: joint(ex, ey), hand: joint(hx, hy) }; }
+  function pose(lean, drop, legL, legR, armL, armR) {
+    return { lean, drop, legL, legR, armL, armR };
+  }
+
   function mixPose(a, b, t) {
     const u = Math.max(0, Math.min(1, t || 0));
     const n = (x, y) => x + (y - x) * u;
-    const leg = (p, q) => ({ hip: n(p.hip, q.hip), knee: n(p.knee, q.knee) });
-    const arm = (p, q) => ({ up: n(p.up, q.up), fore: n(p.fore, q.fore) });
-    return {
-      body: n(a.body, b.body),
-      drop: n(a.drop, b.drop),
-      legL: leg(a.legL, b.legL),
-      legR: leg(a.legR, b.legR),
-      armL: arm(a.armL, b.armL),
-      armR: arm(a.armR, b.armR),
-    };
+    const pt = (p, q) => joint(n(p.x, q.x), n(p.y, q.y));
+    const mixLeg = (p, q) => ({ knee: pt(p.knee, q.knee), foot: pt(p.foot, q.foot) });
+    const mixArm = (p, q) => ({ elbow: pt(p.elbow, q.elbow), hand: pt(p.hand, q.hand) });
+    return pose(
+      n(a.lean, b.lean),
+      n(a.drop, b.drop),
+      mixLeg(a.legL, b.legL),
+      mixLeg(a.legR, b.legR),
+      mixArm(a.armL, b.armL),
+      mixArm(a.armR, b.armR)
+    );
   }
 
   function poseOf(name, phase) {
-    const s = Math.sin(phase * Math.PI * 2);
-    const pack = (body, drop, lHip, lKnee, rHip, rKnee, la, lf, ra, rf) => ({
-      body,
-      drop,
-      legL: { hip: lHip, knee: lKnee },
-      legR: { hip: rHip, knee: rKnee },
-      armL: { up: la, fore: lf },
-      armR: { up: ra, fore: rf },
-    });
+    const s = Math.sin((phase || 0) * Math.PI * 2);
+    const liftL = Math.max(s, 0);
+    const liftR = Math.max(-s, 0);
+    const standL = leg(-8, 36, -6, 72);
+    const standR = leg(10, 36, 14, 72);
+    const hangL = arm(-8, 24, -4, 48);
+    const hangR = arm(10, 24, 6, 48);
+    const runL = leg(-8 + 12 * s, 34 - 8 * liftL, -4 + 18 * s, 72 - 30 * liftL);
+    const runR = leg(10 - 12 * s, 34 - 8 * liftR, 16 - 18 * s, 72 - 30 * liftR);
+    const runAL = arm(-6 - 10 * s, 18, -2 - 8 * s, 40 - 8 * liftR);
+    const runAR = arm(8 + 10 * s, 18, 4 + 8 * s, 40 - 8 * liftL);
     switch (name) {
       case "jog":
-        return pack(0.04, 0, 16 * s, 14, -16 * s, 14, -16 * s, 8, 16 * s, 8);
+        return pose(2, 0, leg(-8 + 8 * s, 36, -4 + 10 * s, 72 - 12 * liftL), leg(10 - 8 * s, 36, 14 - 10 * s, 72 - 12 * liftR), runAL, runAR);
       case "run":
       case "dribble":
-        return pack(0.1, 0, 36 * s, 16 + 20 * Math.max(-s, 0), -36 * s, 16 + 20 * Math.max(s, 0), -32 * s, 14, 32 * s, 12);
+        return pose(6, 2, runL, runR, runAL, runAR);
       case "slide":
-        return pack(-1.05, 28, -24, 36, 62, 8, -70, 16, 86, -8);
       case "strike":
-        return pack(0.62, 40, -36, 62, 74, 8, -24, 18, 36, 8);
+        return pose(18, 34, leg(-16, 10, -6, 38), leg(40, 14, 82, 38), arm(-18, 8, -28, 28), arm(22, 6, 40, 22));
       case "brake":
-        return pack(-0.18, 8, 18, 16, -30, 28, -36, 12, 22, 10);
+        return pose(-8, 6, leg(-4, 30, -2, 66), leg(18, 28, 22, 66), hangL, hangR);
       case "trip": {
         const u = Math.max(0, Math.min(1, phase));
-        const lean = 0.16 + 1.05 * u;
-        const plant = (lean * 180) / Math.PI;
-        return pack(lean, 12 + 14 * u, plant - 16, 18, plant + 6, 20, -22, 12, 30, 8);
+        const ground = 72 - (4 + 12 * u);
+        return pose(8 + 20 * u, 4 + 12 * u, leg(-6, 30, -12, ground), leg(16, 28, 18, ground), arm(-4, 16, 8, 36), arm(18, 12, 28, 30));
       }
       case "sell": {
         const u = Math.max(0, Math.min(1, phase));
-        const lean = -0.1 - 1.02 * u;
-        const plant = (lean * 180) / Math.PI;
-        return pack(lean, 10 + 18 * u, plant - 6, 16, plant + 8, 18, -96, 10, 102, -8);
+        const ground = 72 - (8 + 16 * u);
+        return pose(-8 - 24 * u, 8 + 16 * u, leg(4, 24, 6, ground), leg(22, 20, 30, ground), arm(-6, -8, -2, -32), arm(16, -12, 26, -36));
       }
       case "fall":
-        return pack(-1.2 * Math.max(0, Math.min(1, phase)), 16 * phase, 18, 12, -8, 48, -150, 20, -96, 16);
-      case "down":
-        return pack(-1.48, 34, 36, 46, 18, 40, -70, 10, 24, 16);
+      case "down": {
+        const u = name === "down" ? 1 : Math.max(0, Math.min(1, phase));
+        const ground = 72 - (10 + 18 * u);
+        return pose(-10 - 26 * u, 10 + 18 * u, leg(2, 22, 4, ground), leg(20, 18, 26, ground), arm(-8, -6, 0, -28), arm(14, -8, 24, -30));
+      }
       case "elbow":
-        return pack(-0.12, 0, 12, 8, -14, 10, 28, 16, 148, -70);
+        return pose(4, 0, standL, standR, hangL, arm(24, 8, 36, -8));
       case "pull":
-        return pack(0.18, 0, 14, 10, -6, 12, 22, 8, 58, -6);
+        return pose(8, 0, standL, standR, hangL, arm(26, 10, 40, 6));
       case "pulled":
-        return pack(0.48, 6, 22, 16, -18, 28, 64, 10, -36, 20);
+        return pose(16, 4, leg(-2, 32, 0, 68), leg(14, 30, 16, 68), arm(8, 8, 22, -6), hangR);
       case "appeal":
-        return pack(-0.06, 0, 8, 6, -10, 8, 132, -16, 148, -10);
+        return pose(-4, 0, standL, standR, arm(-10, -6, -6, -34), arm(12, -8, 18, -36));
       case "wall":
-        return pack(0.02, 0, 10, 6, -8, 8, -108, 18, 96, 14);
+        return pose(2, 0, standL, standR, arm(-20, 4, -8, 28), arm(22, 6, 8, 30));
       default:
-        return pack(0, 0, 8, 6, -6, 8, 18, 10, -14, 12);
+        return pose(0, 0, standL, standR, hangL, hangR);
     }
+  }
+
+  function drawBone(ctx, x1, y1, x2, y2, width, color) {
+    line(ctx, x1, y1, x2, y2, width + 5, "#081018");
+    line(ctx, x1, y1, x2, y2, width, color);
+  }
+
+  function drawBoot(ctx, foot) {
+    ctx.save();
+    ctx.translate(foot.x, foot.y);
+    ctx.fillStyle = "#0b0e12";
+    ctx.beginPath();
+    ctx.ellipse(8, 2, 14, 6, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  }
+
+  function drawLegParts(ctx, hipX, hipY, part, kit) {
+    const knee = { x: hipX + part.knee.x, y: hipY + part.knee.y };
+    const foot = { x: hipX + part.foot.x, y: hipY + part.foot.y };
+    drawBone(ctx, hipX, hipY, knee.x, knee.y, 13, kit.short);
+    drawBone(ctx, knee.x, knee.y, foot.x, foot.y, 8, kit.sock);
+    ctx.beginPath();
+    ctx.arc(knee.x, knee.y, 5, 0, Math.PI * 2);
+    ctx.fillStyle = kit.sock;
+    ctx.fill();
+    drawBoot(ctx, foot);
+  }
+
+  function drawHand(ctx, hand) {
+    ctx.beginPath();
+    ctx.arc(hand.x, hand.y, 6, 0, Math.PI * 2);
+    ctx.fillStyle = "#e2ac86";
+    ctx.fill();
+    ctx.lineWidth = 3;
+    ctx.strokeStyle = "#081018";
+    ctx.stroke();
   }
 
   function drawPlayer(ctx, p) {
@@ -169,31 +215,31 @@
     ctx.save();
     ctx.scale(1, 0.22);
     ctx.beginPath();
-    ctx.ellipse(0, 8, 48, 48, 0, 0, Math.PI * 2);
+    ctx.ellipse(0, 8, 42, 42, 0, 0, Math.PI * 2);
     ctx.fillStyle = "rgba(0,0,0,0.45)";
     ctx.fill();
     ctx.restore();
 
-    ctx.translate(0, -74 + (pose.drop || 0));
-    ctx.rotate(pose.body || 0);
-
-    drawLimb(ctx, -10, 4, pose.legL.hip, pose.legL.knee, 40, 13, kit.short, 34, 8, kit.sock, true);
-    drawLimb(ctx, 10, 4, pose.legR.hip, pose.legR.knee, 40, 13, kit.short, 34, 8, kit.sock, true);
+    const hipY = -74 + pose.drop;
+    drawLegParts(ctx, -8, hipY, pose.legL, kit);
+    drawLegParts(ctx, 8, hipY, pose.legR, kit);
 
     ctx.beginPath();
-    ctx.moveTo(-22, -6);
-    ctx.lineTo(22, -6);
-    ctx.lineTo(16, 24);
-    ctx.lineTo(5, 16);
-    ctx.lineTo(0, 26);
-    ctx.lineTo(-5, 16);
-    ctx.lineTo(-16, 24);
+    ctx.moveTo(-20, hipY - 4);
+    ctx.lineTo(20, hipY - 4);
+    ctx.lineTo(16, hipY + 22);
+    ctx.lineTo(0, hipY + 16);
+    ctx.lineTo(-16, hipY + 22);
     ctx.closePath();
     ctx.fillStyle = kit.short;
     ctx.fill();
     ctx.lineWidth = 4;
     ctx.strokeStyle = "#081018";
     ctx.stroke();
+
+    ctx.save();
+    ctx.translate(0, hipY);
+    ctx.rotate((pose.lean * Math.PI) / 180);
 
     ctx.save();
     ctx.translate(-3, -4);
@@ -215,26 +261,25 @@
       ctx.fillStyle = kit.num;
       ctx.fillText(String(p.num), 0, -32);
     }
-
     if (p.band) {
       ctx.fillStyle = "#5ef2e0";
       ctx.fillRect(-28, -46, 10, 8);
     }
 
-    const left = drawLimb(ctx, -18, -50, pose.armL.up, pose.armL.fore, 28, 9, kit.shirt, 22, 7, "#e2ac86", false);
-    const right = drawLimb(ctx, 18, -50, pose.armR.up, pose.armR.fore, 28, 9, kit.shirt, 22, 7, "#e2ac86", false);
-    [left, right].forEach((hand) => {
-      ctx.beginPath();
-      ctx.arc(hand.x, hand.y, 6.5, 0, Math.PI * 2);
-      ctx.fillStyle = "#e2ac86";
-      ctx.fill();
-      ctx.lineWidth = 3;
-      ctx.strokeStyle = "#081018";
-      ctx.stroke();
+    [["L", -16, -50, pose.armL], ["R", 16, -50, pose.armR]].forEach((spec) => {
+      const x = spec[1];
+      const y = spec[2];
+      const part = spec[3];
+      const elbow = { x: x + part.elbow.x, y: y + part.elbow.y };
+      const hand = { x: x + part.hand.x, y: y + part.hand.y };
+      drawBone(ctx, x, y, elbow.x, elbow.y, 9, kit.shirt);
+      drawBone(ctx, elbow.x, elbow.y, hand.x, hand.y, 7, "#e2ac86");
+      drawHand(ctx, hand);
     });
 
     drawHead(ctx);
     if (p.flag) drawFlag(ctx);
+    ctx.restore();
     ctx.restore();
   }
 

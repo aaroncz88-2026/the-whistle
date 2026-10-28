@@ -407,7 +407,7 @@
       lookMs: 6800,
       callMs: 5600,
       plain: true,
-      loopMs: 11000,
+      loopMs: 4200,
       hs: 0,
       as: 0,
       blurb: "两下都在正面。先看脚有没有碰到人。",
@@ -574,7 +574,7 @@
     </div>`;
   }
 
-  const COLD_MS = 3200;
+  const COLD_MS = 1800;
   const COLD_HIT = 0.48;
 
   function topHTML() {
@@ -981,7 +981,7 @@
     state.holdT = 0.7;
     state.pulse = 1;
     state.since = performance.now();
-    state.until = state.since + 1100;
+    state.until = state.since + 780;
     document.body.dataset.phase = "coldhold";
     const stamp = $("stamp");
     stamp.hidden = false;

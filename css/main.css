@@ -472,6 +472,8 @@ body[data-phase="stamp"] #dock {
   background: rgba(7, 10, 18, 0.58);
 }
 
+#stamp[hidden] { display: none; }
+
 #stamp.cold { background: rgba(7, 10, 18, 0.22); }
 
 .mark {
