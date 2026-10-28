@@ -117,95 +117,129 @@
 
   function ankleActors(t) {
     const ground = 792;
-    const approach = smooth(0.04, 0.38, t);
-    const strike = smooth(0.32, 0.48, t);
-    const down = smooth(0.48, 0.8, t);
-    const defX = lerp(720, 900, Math.max(approach, strike));
-    const atkX = lerp(1040, 1120, down);
-    const ballT = smooth(0.48, 0.78, t);
+    const runIn = smooth(0.02, 0.26, t);
+    const drop = smooth(0.22, 0.4, t);
+    const through = smooth(0.36, 0.58, t);
+    const fall = smooth(0.44, 0.78, t);
+    const defX = lerp(640, lerp(948, 1004, through), Math.max(runIn, drop));
+    const atkX = lerp(1056, 1110, fall * 0.35);
+    const ballT = smooth(0.46, 0.78, t);
     const list = [
       P({
-        x: defX,
-        y: ground,
-        s: 1.55,
-        kit: "keel",
-        num: "4",
-        pose: "run",
-        poseTo: "strike",
-        blend: strike,
-        phase: t * 2.4,
-        phaseTo: 1,
-      }),
-      P({
         x: atkX,
-        y: ground,
-        s: 1.62,
+        y: t < 0.58 ? ground - 10 : ground + 8,
+        s: 1.6,
         kit: "mara",
         num: "10",
         pose: "dribble",
-        poseTo: "trip",
-        blend: down,
-        phase: t * 2.2,
-        phaseTo: down,
+        poseTo: "swept",
+        blend: fall,
+        phase: t * 2.1,
+        phaseTo: 1,
+        pitch: fall,
         band: true,
+      }),
+      P({
+        x: defX,
+        y: ground,
+        s: 1.58,
+        kit: "keel",
+        num: "4",
+        pose: "run",
+        poseTo: "slide",
+        blend: drop,
+        phase: t * 2.3,
+        phaseTo: 1,
+        slide: drop,
       }),
       {
         type: "ball",
-        x: lerp(atkX + 46, 1240, ballT),
+        x: lerp(atkX + 34, 1320, ballT),
         y: ground + 6,
-        z: ballT < 0.04 ? 8 : Math.sin(ballT * Math.PI) * 78,
+        z: ballT < 0.04 ? 6 : Math.sin(ballT * Math.PI) * 96,
         s: 1.05,
       },
     ];
-    if (t > 0.46 && t < 0.7) {
-      const a = t < 0.54 ? (t - 0.46) / 0.08 : 1 - (t - 0.54) / 0.16;
-      list.push({ type: "dust", x: 1005, y: ground + 8, a: Math.max(0, a) });
+    if (t > 0.4 && t < 0.72) {
+      const a = t < 0.5 ? (t - 0.4) / 0.1 : 1 - (t - 0.5) / 0.22;
+      list.push({ type: "dust", x: lerp(980, 1088, through), y: ground + 6, a: Math.max(0, a) });
     }
     return list;
   }
 
   function diveFrontActors(t) {
     const ground = 792;
-    const chase = smooth(0.04, 0.36, t);
-    const brake = smooth(0.32, 0.48, t);
-    const sell = smooth(0.56, 0.9, t);
-    const defX = lerp(680, 860, chase);
-    const atkX = 1160;
+    const chase = smooth(0.02, 0.32, t);
+    const miss = smooth(0.28, 0.46, t);
+    const fall = smooth(0.5, 0.78, t);
+    const carry = smooth(0.52, 0.94, t);
+    const atkX = 1188;
+    const slideX = 900;
+    const up = carry > 0.18;
+    const defX = up ? lerp(slideX, 1520, (carry - 0.18) / 0.82) : lerp(660, slideX, Math.max(chase, miss));
+    const onGround = miss > 0.22 && !up;
     const list = [
       P({
-        x: defX,
-        y: ground,
-        s: 1.5,
-        kit: "keel",
-        num: "4",
-        pose: "run",
-        poseTo: "brake",
-        blend: brake,
-        phase: t * 2.6,
-        phaseTo: 1,
-      }),
-      P({
         x: atkX,
-        y: ground,
+        y: ground + 4,
         s: 1.58,
         kit: "mara",
         num: "9",
         pose: "dribble",
-        poseTo: "sell",
-        blend: sell,
-        phase: t * 2.4,
-        phaseTo: sell,
+        poseTo: "swept",
+        blend: fall,
+        phase: t * 2.2,
+        phaseTo: 1,
+        pitch: fall,
         band: true,
+      }),
+      P({
+        x: defX,
+        y: ground - 6,
+        s: 1.52,
+        kit: "keel",
+        num: "4",
+        pose: onGround ? "slide" : "run",
+        phase: onGround ? 1 : t * 2.4 + carry,
+        slide: onGround ? Math.max(miss, 0.2) : 0,
       }),
       {
         type: "ball",
-        x: lerp(atkX + 48, 1320, smooth(0.2, 0.7, t)),
+        x: up ? lerp(1160, defX + 36, Math.min(1, (carry - 0.18) / 0.5)) : lerp(1100, 1148, miss),
         y: ground + 6,
-        z: 10,
+        z: 8,
         s: 1.05,
       },
     ];
     return list;
+  }
+
+  function cardActors(t) {
+    const ground = 792;
+    const lift = smooth(0.16, 0.62, t);
+    const walk = smooth(0.05, 0.9, t);
+    return [
+      P({
+        x: lerp(1280, 1460, walk),
+        y: ground - 8,
+        s: 1.05,
+        kit: "keel",
+        num: "5",
+        pose: "jog",
+        phase: t * 1.4,
+        facing: 1,
+      }),
+      P({
+        x: 1160,
+        y: ground,
+        s: 1.82,
+        kit: "ref",
+        num: "",
+        pose: "stand",
+        card: lift,
+        facing: 1,
+      }),
+    ];
   }
 
   function diveActors(t) {
@@ -274,12 +308,12 @@
     actors: ankleActors,
     bestCard: null,
     live(res) {
-      if (res.decision === "play") return "没有哨。10 号留在地上。";
-      return "哨响。铲到了脚踝。";
+      if (res.decision === "play") return "没有哨。人已经被铲倒了。";
+      return "哨响。脚铲穿了脚踝。";
     },
     grade(res) {
-      if (res.decision === "foul") return pack(res, 10, "铲到脚踝。吹停是对的。");
-      return pack(res, 0, "脚穿到了人。这一下该停。");
+      if (res.decision === "foul") return pack(res, 10, "铲穿了脚踝，人倒下去。吹停是对的。");
+      return pack(res, 0, "脚把人铲倒了。这一下该停。");
     },
   };
 
@@ -407,10 +441,10 @@
       lookMs: 6800,
       callMs: 5600,
       plain: true,
-      loopMs: 4200,
+      loopMs: 5000,
       hs: 0,
       as: 0,
-      blurb: "两下都在正面。先看脚有没有碰到人。",
+      blurb: "看脚有没有铲到人。没碰到，人倒了，对方还带着球往前，就继续。",
       incidents: [
         ankleCall,
         {
@@ -419,16 +453,19 @@
           kicker: "",
           pitch: "open",
           cameras: {
-            left: { x: 1020, y: 740, zoom: 1.16 },
-            center: { x: 1020, y: 740, zoom: 1.16 },
-            right: { x: 1020, y: 740, zoom: 1.16 },
+            left: { x: 1120, y: 760, zoom: 1.02 },
+            center: { x: 1120, y: 760, zoom: 1.02 },
+            right: { x: 1120, y: 760, zoom: 1.02 },
           },
           actors: diveFrontActors,
           bestCard: null,
-          live: diveCall.live,
+          live(res) {
+            if (res.decision === "foul") return "哨响。脚是空的，4 号还带着球。";
+            return "没有哨。人倒了，球还在往前走。";
+          },
           grade(res) {
-            if (res.decision === "play") return pack(res, 10, "脚没有到。人是自己倒下去的。");
-            return pack(res, 0, "没有接触。这一下不该吹。");
+            if (res.decision === "play") return pack(res, 10, "没碰到。人自己倒了，对方带着球继续进攻。");
+            return pack(res, 0, "脚没碰到。对方还在进攻，这一下不该停。");
           },
         },
       ],
@@ -574,14 +611,14 @@
     </div>`;
   }
 
-  const COLD_MS = 1800;
-  const COLD_HIT = 0.48;
+  const COLD_MS = 2200;
+  const COLD_HIT = 0.62;
 
   function topHTML() {
     if (state.phase === "cold" || state.phase === "coldhold") {
       return `<div class="hud"><div class="scorebug">
         <div class="team mara"><b>MARA</b><em>0</em></div>
-        <div class="clock"><strong>14:20</strong></div>
+        <div class="clock"><strong>63:12</strong></div>
         <div class="team keel"><em>0</em><b>KEEL</b></div>
       </div></div>`;
     }
@@ -630,7 +667,7 @@
     return `<div class="${scrim}"></div><div class="poster boot">
       <p class="eyebrow">NIGHT MATCH</p>
       <h1><span>THE</span>WHISTLE</h1>
-      <p class="lede">哨响。比赛停在这一下。</p>
+      <p class="lede">红牌举起来。这一下比赛停了。</p>
       <button type="button" class="start" data-act="start">开始</button>
     </div>`;
   }
@@ -978,17 +1015,14 @@
 
   function coldHit() {
     state.phase = "coldhold";
-    state.holdT = 0.7;
+    state.holdT = 1;
     state.pulse = 1;
     state.since = performance.now();
-    state.until = state.since + 780;
+    state.until = state.since + 820;
     document.body.dataset.phase = "coldhold";
-    const stamp = $("stamp");
-    stamp.hidden = false;
-    stamp.className = "cold";
-    stamp.innerHTML = `<div class="mark"><div class="en">FOUL</div><div class="zh">吹停</div></div>`;
+    $("stamp").hidden = true;
     shake();
-    flash("bad");
+    flash("");
     AudioBus.whistle();
     renderChrome();
   }
@@ -1001,7 +1035,7 @@
     state.results = [];
     state.sheet = [];
     state.coldFrame = true;
-    state.holdT = 0.7;
+    state.holdT = 1;
     document.body.dataset.phase = "intro";
     $("stamp").hidden = true;
     renderChrome();
@@ -1114,12 +1148,12 @@
     let pitch = "box";
     let face = false;
     if (state.phase === "cold" || state.phase === "coldhold" || (state.phase === "intro" && state.coldFrame)) {
-      const t = state.phase === "cold" ? clamp((now - state.since) / COLD_MS, 0, 1) : 0.7;
-      const zoom = state.phase === "cold" ? lerp(1.02, 1.14, smooth(0.12, COLD_HIT, t)) : 1.08;
+      const t = state.phase === "cold" ? clamp((now - state.since) / COLD_MS, 0, 1) : 1;
+      const zoom = state.phase === "cold" ? lerp(1.02, 1.12, smooth(0.1, COLD_HIT, t)) : 1.08;
       return {
         dpr: size.dpr,
-        cam: { x: 1000, y: 740, zoom },
-        actors: ankleActors(t),
+        cam: { x: 1040, y: 730, zoom },
+        actors: cardActors(t),
         pitch: "box",
         face: false,
         pulse: state.pulse,

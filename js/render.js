@@ -4,6 +4,7 @@
     keel: { shirt: "#2c4e7a", short: "#1b314e", sock: "#2c4e7a", num: "#7ff6ea", trim: "#5ef2e0" },
     keep: { shirt: "#0f3d3a", short: "#0f3d3a", sock: "#f4f7fb", num: "#f4f7fb", trim: "#5ef2e0" },
     ar: { shirt: "#14181f", short: "#101318", sock: "#14181f", num: "#5ef2e0", trim: "#5ef2e0" },
+    ref: { shirt: "#161b22", short: "#101318", sock: "#161b22", num: "#f4f7fb", trim: "#f4f7fb" },
   };
 
   function line(ctx, x1, y1, x2, y2, w, color) {
@@ -169,8 +170,11 @@
       case "dribble":
         return gait(phase, 8, 1, 1);
       case "slide":
+        return pose(6, -34, 102, 4, 12, -40, 24);
       case "strike":
         return pose(12, -18, 96, 70, 14, -22, 18);
+      case "swept":
+        return pose(4, -4, 12, 38, 88, 46, 22);
       case "brake":
         return pose(-6, 8, 36, 18, 42, -8, 10);
       case "trip": {
@@ -258,36 +262,36 @@
     drawBoot(ctx, foot);
   }
 
-  function drawHand(ctx, hand) {
-    ctx.beginPath();
-    ctx.arc(hand.x, hand.y, 6, 0, Math.PI * 2);
-    ctx.fillStyle = "#e2ac86";
-    ctx.fill();
-    ctx.lineWidth = 3;
-    ctx.strokeStyle = "#081018";
-    ctx.stroke();
+  function makeStraightArm(shoulderDeg) {
+    const elbow = tip(UPPER, shoulderDeg);
+    const hand = {
+      x: elbow.x + tip(FORE + 8, shoulderDeg).x,
+      y: elbow.y + tip(FORE + 8, shoulderDeg).y,
+    };
+    return { elbow, hand };
   }
 
-  function drawPlayer(ctx, p) {
-    const kit = KITS[p.kit] || KITS.mara;
-    const base = poseOf(p.pose, p.phase || 0);
-    const pose = p.poseTo ? mixPose(base, poseOf(p.poseTo, p.phaseTo == null ? p.phase || 0 : p.phaseTo), p.blend || 0) : base;
-    const sc = p.s || 1;
+  function drawRaisedCard(ctx, lift) {
+    const u = Math.max(0, Math.min(1, lift || 0));
+    const ang = 28 + (168 - 28) * u;
+    const arm = makeStraightArm(ang);
+    drawArm(ctx, 10, -50, arm, { shirt: "#161b22" });
+    if (u < 0.42) return;
+    const hand = { x: 10 + arm.hand.x, y: -50 + arm.hand.y };
     ctx.save();
-    ctx.translate(p.x, p.y);
-    ctx.scale((p.facing || 1) * sc, sc);
-
-    ctx.save();
-    ctx.scale(1, 0.22);
-    ctx.beginPath();
-    ctx.ellipse(0, 8, 42, 42, 0, 0, Math.PI * 2);
-    ctx.fillStyle = "rgba(0,0,0,0.45)";
-    ctx.fill();
+    ctx.translate(hand.x, hand.y);
+    ctx.rotate(-0.08);
+    ctx.fillStyle = "#081018";
+    ctx.fillRect(-13, -40, 28, 40);
+    ctx.fillStyle = "#e10600";
+    ctx.fillRect(-10, -37, 22, 34);
     ctx.restore();
+  }
 
+  function paintFigure(ctx, p, kit, pose, hipY) {
+    const sc = p.s || 1;
     const leftLeg = makeLeg(pose.hipL, pose.kneeL);
     const rightLeg = makeLeg(pose.hipR, pose.kneeR);
-    const hipY = -Math.max(leftLeg.foot.y, rightLeg.foot.y);
     const backLeg = pose.hipL <= pose.hipR ? leftLeg : rightLeg;
     const frontLeg = pose.hipL <= pose.hipR ? rightLeg : leftLeg;
     drawLegParts(ctx, 0, hipY, backLeg, kit);
@@ -326,8 +330,12 @@
     ctx.lineWidth = 4;
     ctx.strokeStyle = "#081018";
     ctx.stroke();
+    if (p.kit === "ref") {
+      ctx.fillStyle = "#f4f7fb";
+      ctx.fillRect(-18, -62, 36, 8);
+    }
 
-    if (p.num && sc >= 0.72) {
+    if (p.num && sc >= 0.72 && p.kit !== "ref") {
       ctx.font = "700 26px Oswald, Impact, sans-serif";
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
@@ -341,10 +349,65 @@
 
     drawHead(ctx);
     if (p.flag) drawFlag(ctx);
-    drawArm(ctx, 6, -48, frontArm, kit);
+    if ((p.card || 0) > 0.02) drawRaisedCard(ctx, p.card);
+    else drawArm(ctx, 6, -48, frontArm, kit);
     ctx.restore();
 
     drawLegParts(ctx, 1, hipY, frontLeg, kit);
+  }
+
+  function drawHand(ctx, hand) {
+    ctx.beginPath();
+    ctx.arc(hand.x, hand.y, 6, 0, Math.PI * 2);
+    ctx.fillStyle = "#e2ac86";
+    ctx.fill();
+    ctx.lineWidth = 3;
+    ctx.strokeStyle = "#081018";
+    ctx.stroke();
+  }
+
+  function drawPlayer(ctx, p) {
+    const kit = KITS[p.kit] || KITS.mara;
+    const base = poseOf(p.pose, p.phase || 0);
+    const pose = p.poseTo ? mixPose(base, poseOf(p.poseTo, p.phaseTo == null ? p.phase || 0 : p.phaseTo), p.blend || 0) : base;
+    const sc = p.s || 1;
+    ctx.save();
+    ctx.translate(p.x, p.y);
+    ctx.scale((p.facing || 1) * sc, sc);
+
+    ctx.save();
+    ctx.scale(1, 0.22);
+    ctx.beginPath();
+    ctx.ellipse(0, 8, 42, 42, 0, 0, Math.PI * 2);
+    ctx.fillStyle = "rgba(0,0,0,0.45)";
+    ctx.fill();
+    ctx.restore();
+
+    if ((p.slide || 0) > 0.08) {
+      const u = Math.max(0, Math.min(1, p.slide));
+      ctx.save();
+      ctx.translate(u * 10, -56 + u * 32);
+      ctx.rotate(-u * 1.18);
+      paintFigure(ctx, p, kit, pose, 0);
+      ctx.restore();
+      ctx.restore();
+      return;
+    }
+    if ((p.pitch || 0) > 0.08) {
+      const u = Math.max(0, Math.min(1, p.pitch));
+      ctx.save();
+      ctx.rotate(u * 1.22);
+      const sweptL = makeLeg(pose.hipL, pose.kneeL);
+      const sweptR = makeLeg(pose.hipR, pose.kneeR);
+      paintFigure(ctx, p, kit, pose, -Math.max(sweptL.foot.y, sweptR.foot.y));
+      ctx.restore();
+      ctx.restore();
+      return;
+    }
+
+    const leftLeg = makeLeg(pose.hipL, pose.kneeL);
+    const rightLeg = makeLeg(pose.hipR, pose.kneeR);
+    paintFigure(ctx, p, kit, pose, -Math.max(leftLeg.foot.y, rightLeg.foot.y));
     ctx.restore();
   }
 
