@@ -1,10 +1,10 @@
 (function () {
   const KITS = {
-    mara: { shirt: "#f4f7fb", short: "#f4f7fb", sock: "#f4f7fb", num: "#121820", trim: "#c5ced8" },
-    keel: { shirt: "#2c4e7a", short: "#1b314e", sock: "#2c4e7a", num: "#7ff6ea", trim: "#5ef2e0" },
-    keep: { shirt: "#0f3d3a", short: "#0f3d3a", sock: "#f4f7fb", num: "#f4f7fb", trim: "#5ef2e0" },
-    ar: { shirt: "#14181f", short: "#101318", sock: "#14181f", num: "#5ef2e0", trim: "#5ef2e0" },
-    ref: { shirt: "#161b22", short: "#101318", sock: "#161b22", num: "#f4f7fb", trim: "#f4f7fb" },
+    mara: { shirt: "#f4f7fb", short: "#e6edf4", sock: "#243044", num: "#121820", trim: "#c5ced8" },
+    keel: { shirt: "#2c4e7a", short: "#1b314e", sock: "#f4f7fb", num: "#7ff6ea", trim: "#5ef2e0" },
+    keep: { shirt: "#0f3d3a", short: "#0c302e", sock: "#f4f7fb", num: "#f4f7fb", trim: "#5ef2e0" },
+    ar: { shirt: "#14181f", short: "#101318", sock: "#1c222c", num: "#5ef2e0", trim: "#5ef2e0" },
+    ref: { shirt: "#161b22", short: "#101318", sock: "#1c222c", num: "#f4f7fb", trim: "#f4f7fb" },
   };
 
   function line(ctx, x1, y1, x2, y2, w, color) {
@@ -44,37 +44,56 @@
 
   function torsoPath(ctx) {
     ctx.beginPath();
-    ctx.moveTo(-26, -64);
-    ctx.quadraticCurveTo(0, -78, 26, -64);
-    ctx.lineTo(20, -4);
-    ctx.quadraticCurveTo(0, 8, -20, -4);
+    ctx.moveTo(-16, -66);
+    ctx.quadraticCurveTo(-6, -80, 10, -76);
+    ctx.quadraticCurveTo(30, -68, 26, -40);
+    ctx.lineTo(20, -6);
+    ctx.quadraticCurveTo(6, 12, -18, -2);
     ctx.closePath();
   }
 
   function drawHead(ctx) {
-    ctx.beginPath();
-    ctx.arc(-3, -96, 18, 0, Math.PI * 2);
-    ctx.fillStyle = "#5ef2e0";
-    ctx.fill();
-    ctx.beginPath();
-    ctx.arc(0, -92, 18, 0, Math.PI * 2);
     ctx.fillStyle = "#e2ac86";
-    ctx.fill();
-    ctx.lineWidth = 4;
     ctx.strokeStyle = "#081018";
-    ctx.stroke();
+    ctx.lineWidth = 3.5;
     ctx.beginPath();
-    ctx.ellipse(0, -102, 15, 9, 0, 0, Math.PI * 2);
+    ctx.moveTo(-7, -78);
+    ctx.lineTo(7, -78);
+    ctx.lineTo(6, -64);
+    ctx.lineTo(-6, -64);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.arc(0, -96, 18, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.arc(-1, -100, 16, Math.PI * 1.08, Math.PI * 1.92);
     ctx.fillStyle = "#141820";
     ctx.fill();
+
     ctx.beginPath();
-    ctx.arc(15, -90, 4, 0, Math.PI * 2);
+    ctx.arc(-13, -94, 4.2, 0, Math.PI * 2);
     ctx.fillStyle = "#e2ac86";
     ctx.fill();
-    ctx.fillStyle = "#141820";
+    ctx.stroke();
+
     ctx.beginPath();
-    ctx.arc(8, -92, 2.2, 0, Math.PI * 2);
+    ctx.arc(8, -97, 2.3, 0, Math.PI * 2);
+    ctx.fillStyle = "#141820";
     ctx.fill();
+
+    ctx.beginPath();
+    ctx.moveTo(14, -94);
+    ctx.lineTo(19, -89);
+    ctx.lineTo(12, -88);
+    ctx.closePath();
+    ctx.fillStyle = "#e2ac86";
+    ctx.fill();
+    ctx.stroke();
   }
 
   function drawFlag(ctx) {
@@ -227,39 +246,68 @@
     return { elbow, hand };
   }
 
+  function solidLimb(ctx, x1, y1, x2, y2, w1, w2, color) {
+    const dx = x2 - x1;
+    const dy = y2 - y1;
+    const len = Math.hypot(dx, dy) || 1;
+    const px = -dy / len;
+    const py = dx / len;
+    const a = Math.atan2(py, px);
+    const b = Math.atan2(-py, -px);
+    ctx.beginPath();
+    ctx.moveTo(x1 + px * w1, y1 + py * w1);
+    ctx.lineTo(x2 + px * w2, y2 + py * w2);
+    ctx.arc(x2, y2, w2, a, b, false);
+    ctx.lineTo(x1 - px * w1, y1 - py * w1);
+    ctx.arc(x1, y1, w1, b, a, false);
+    ctx.closePath();
+    ctx.fillStyle = color;
+    ctx.fill();
+    ctx.strokeStyle = "#081018";
+    ctx.lineWidth = 3.5;
+    ctx.lineJoin = "round";
+    ctx.stroke();
+  }
+
   function drawArm(ctx, x, y, part, kit) {
     const elbow = { x: x + part.elbow.x, y: y + part.elbow.y };
     const hand = { x: x + part.hand.x, y: y + part.hand.y };
-    drawBone(ctx, x, y, elbow.x, elbow.y, 9, kit.shirt);
-    drawBone(ctx, elbow.x, elbow.y, hand.x, hand.y, 7, "#e2ac86");
-    drawHand(ctx, hand);
+    solidLimb(ctx, x, y, elbow.x, elbow.y, 8, 6.5, kit.shirt);
+    solidLimb(ctx, elbow.x, elbow.y, hand.x, hand.y, 6, 5, "#e2ac86");
+    ctx.beginPath();
+    ctx.ellipse(hand.x + 3, hand.y, 8, 6, 0, 0, Math.PI * 2);
+    ctx.fillStyle = "#e2ac86";
+    ctx.fill();
+    ctx.strokeStyle = "#081018";
+    ctx.lineWidth = 3;
+    ctx.stroke();
   }
 
-  function drawBone(ctx, x1, y1, x2, y2, width, color) {
-    line(ctx, x1, y1, x2, y2, width + 5, "#081018");
-    line(ctx, x1, y1, x2, y2, width, color);
-  }
-
-  function drawBoot(ctx, foot) {
+  function drawBoot(ctx, knee, foot) {
+    const ang = Math.atan2(foot.x - knee.x, foot.y - knee.y);
     ctx.save();
     ctx.translate(foot.x, foot.y);
+    ctx.rotate(ang * 0.45);
     ctx.fillStyle = "#0b0e12";
+    ctx.strokeStyle = "#081018";
+    ctx.lineWidth = 3;
     ctx.beginPath();
-    ctx.ellipse(8, 2, 14, 6, 0, 0, Math.PI * 2);
+    ctx.moveTo(-6, -7);
+    ctx.lineTo(18, -6);
+    ctx.quadraticCurveTo(24, 0, 18, 7);
+    ctx.lineTo(-7, 7);
+    ctx.closePath();
     ctx.fill();
+    ctx.stroke();
     ctx.restore();
   }
 
   function drawLegParts(ctx, hipX, hipY, part, kit) {
     const knee = { x: hipX + part.knee.x, y: hipY + part.knee.y };
     const foot = { x: hipX + part.foot.x, y: hipY + part.foot.y };
-    drawBone(ctx, hipX, hipY, knee.x, knee.y, 13, kit.short);
-    drawBone(ctx, knee.x, knee.y, foot.x, foot.y, 8, kit.sock);
-    ctx.beginPath();
-    ctx.arc(knee.x, knee.y, 5, 0, Math.PI * 2);
-    ctx.fillStyle = kit.sock;
-    ctx.fill();
-    drawBoot(ctx, foot);
+    solidLimb(ctx, hipX, hipY, knee.x, knee.y, 15, 11, kit.short);
+    solidLimb(ctx, knee.x, knee.y, foot.x, foot.y, 9, 6.5, kit.sock);
+    drawBoot(ctx, knee, foot);
   }
 
   function makeStraightArm(shoulderDeg) {
@@ -297,14 +345,14 @@
     drawLegParts(ctx, 0, hipY, backLeg, kit);
 
     ctx.beginPath();
-    ctx.moveTo(-18, hipY - 2);
-    ctx.lineTo(16, hipY - 2);
-    ctx.lineTo(12, hipY + 20);
-    ctx.lineTo(-14, hipY + 20);
+    ctx.moveTo(-22, hipY - 6);
+    ctx.quadraticCurveTo(-8, hipY - 16, 16, hipY - 8);
+    ctx.lineTo(18, hipY + 22);
+    ctx.quadraticCurveTo(4, hipY + 32, -16, hipY + 22);
     ctx.closePath();
     ctx.fillStyle = kit.short;
     ctx.fill();
-    ctx.lineWidth = 4;
+    ctx.lineWidth = 3.5;
     ctx.strokeStyle = "#081018";
     ctx.stroke();
 
@@ -318,16 +366,10 @@
     const frontArm = pose.shoulderL <= pose.shoulderR ? armB : armA;
     drawArm(ctx, -4, -50, backArm, kit);
 
-    ctx.save();
-    ctx.translate(-2, -4);
-    torsoPath(ctx);
-    ctx.fillStyle = "rgba(94,242,224,0.95)";
-    ctx.fill();
-    ctx.restore();
     torsoPath(ctx);
     ctx.fillStyle = kit.shirt;
     ctx.fill();
-    ctx.lineWidth = 4;
+    ctx.lineWidth = 3.5;
     ctx.strokeStyle = "#081018";
     ctx.stroke();
     if (p.kit === "ref") {
