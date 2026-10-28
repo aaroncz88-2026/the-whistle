@@ -1,10 +1,10 @@
 (function () {
   const KITS = {
-    mara: { shirt: "#f4f7fb", short: "#e6edf4", sock: "#243044", num: "#121820", trim: "#c5ced8" },
-    keel: { shirt: "#2c4e7a", short: "#1b314e", sock: "#f4f7fb", num: "#7ff6ea", trim: "#5ef2e0" },
-    keep: { shirt: "#0f3d3a", short: "#0c302e", sock: "#f4f7fb", num: "#f4f7fb", trim: "#5ef2e0" },
-    ar: { shirt: "#14181f", short: "#101318", sock: "#1c222c", num: "#5ef2e0", trim: "#5ef2e0" },
-    ref: { shirt: "#161b22", short: "#101318", sock: "#1c222c", num: "#f4f7fb", trim: "#f4f7fb" },
+    mara: { shirt: "#f3efe6", short: "#e3d9c8", sock: "#3c4654", num: "#2a241c", trim: "#d9d0c2" },
+    keel: { shirt: "#3e6494", short: "#2c4a70", sock: "#f4efe6", num: "#e7fff8", trim: "#7ea4c8" },
+    keep: { shirt: "#1f5c56", short: "#164742", sock: "#f4efe6", num: "#f4efe6", trim: "#8fd0c4" },
+    ar: { shirt: "#2a3038", short: "#22272e", sock: "#3a414b", num: "#d7fff6", trim: "#8fd0c4" },
+    ref: { shirt: "#2c3138", short: "#24282e", sock: "#343a42", num: "#f4efe6", trim: "#f4efe6" },
   };
 
   function line(ctx, x1, y1, x2, y2, w, color) {
@@ -42,58 +42,87 @@
     return { x: ex, y: ey };
   }
 
+  const SKIN = "#e7b08a";
+
+  function hexToRgb(hex) {
+    const h = hex.replace("#", "");
+    return [parseInt(h.slice(0, 2), 16), parseInt(h.slice(2, 4), 16), parseInt(h.slice(4, 6), 16)];
+  }
+
+  function mixHex(hex, target, t) {
+    const a = hexToRgb(hex);
+    const b = hexToRgb(target);
+    const c = a.map((v, i) => Math.round(v + (b[i] - v) * t));
+    return `rgb(${c[0]}, ${c[1]}, ${c[2]})`;
+  }
+
+  function clayShade(color) {
+    return mixHex(color, "#24180f", 0.42);
+  }
+
+  function clayLite(color) {
+    return mixHex(color, "#fff6ea", 0.62);
+  }
+
+  function clayFill(ctx, color, x0, y0, x1, y1) {
+    const g = ctx.createLinearGradient(x0, y0, x1, y1);
+    g.addColorStop(0, clayLite(color));
+    g.addColorStop(0.4, color);
+    g.addColorStop(1, clayShade(color));
+    ctx.fillStyle = g;
+    ctx.fill();
+    ctx.strokeStyle = clayShade(color);
+    ctx.lineWidth = 2;
+    ctx.lineJoin = "round";
+    ctx.stroke();
+  }
+
+  function clayBall(ctx, x, y, r, color) {
+    const g = ctx.createRadialGradient(x - r * 0.38, y - r * 0.42, r * 0.08, x + r * 0.1, y + r * 0.15, r);
+    g.addColorStop(0, clayLite(color));
+    g.addColorStop(0.45, color);
+    g.addColorStop(1, clayShade(color));
+    ctx.beginPath();
+    ctx.arc(x, y, r, 0, Math.PI * 2);
+    ctx.fillStyle = g;
+    ctx.fill();
+    ctx.strokeStyle = clayShade(color);
+    ctx.lineWidth = 1.6;
+    ctx.stroke();
+  }
+
   function torsoPath(ctx) {
     ctx.beginPath();
-    ctx.moveTo(-16, -66);
-    ctx.quadraticCurveTo(-6, -80, 10, -76);
-    ctx.quadraticCurveTo(30, -68, 26, -40);
-    ctx.lineTo(20, -6);
-    ctx.quadraticCurveTo(6, 12, -18, -2);
+    ctx.moveTo(-18, -62);
+    ctx.quadraticCurveTo(-8, -84, 12, -76);
+    ctx.quadraticCurveTo(34, -64, 28, -36);
+    ctx.quadraticCurveTo(24, -8, 16, 2);
+    ctx.quadraticCurveTo(2, 16, -18, 2);
+    ctx.quadraticCurveTo(-28, -16, -18, -62);
     ctx.closePath();
   }
 
   function drawHead(ctx) {
-    ctx.fillStyle = "#e2ac86";
-    ctx.strokeStyle = "#081018";
-    ctx.lineWidth = 3.5;
+    clayBall(ctx, 0, -72, 7, SKIN);
+    clayBall(ctx, 2, -98, 19, SKIN);
+    ctx.save();
     ctx.beginPath();
-    ctx.moveTo(-7, -78);
-    ctx.lineTo(7, -78);
-    ctx.lineTo(6, -64);
-    ctx.lineTo(-6, -64);
+    ctx.arc(1, -102, 17, Math.PI * 1.05, Math.PI * 1.95);
+    ctx.lineTo(1, -102);
     ctx.closePath();
-    ctx.fill();
-    ctx.stroke();
-
+    ctx.clip();
+    clayBall(ctx, 0, -108, 16, "#2a241c");
+    ctx.restore();
+    clayBall(ctx, -14, -96, 4.4, SKIN);
     ctx.beginPath();
-    ctx.arc(0, -96, 18, 0, Math.PI * 2);
+    ctx.arc(8, -98, 2.6, 0, Math.PI * 2);
+    ctx.fillStyle = "rgba(42, 28, 20, 0.82)";
     ctx.fill();
-    ctx.stroke();
-
     ctx.beginPath();
-    ctx.arc(-1, -100, 16, Math.PI * 1.08, Math.PI * 1.92);
-    ctx.fillStyle = "#141820";
+    ctx.arc(7.2, -99, 0.9, 0, Math.PI * 2);
+    ctx.fillStyle = "rgba(255, 246, 234, 0.7)";
     ctx.fill();
-
-    ctx.beginPath();
-    ctx.arc(-13, -94, 4.2, 0, Math.PI * 2);
-    ctx.fillStyle = "#e2ac86";
-    ctx.fill();
-    ctx.stroke();
-
-    ctx.beginPath();
-    ctx.arc(8, -97, 2.3, 0, Math.PI * 2);
-    ctx.fillStyle = "#141820";
-    ctx.fill();
-
-    ctx.beginPath();
-    ctx.moveTo(14, -94);
-    ctx.lineTo(19, -89);
-    ctx.lineTo(12, -88);
-    ctx.closePath();
-    ctx.fillStyle = "#e2ac86";
-    ctx.fill();
-    ctx.stroke();
+    clayBall(ctx, 16, -92, 3.2, SKIN);
   }
 
   function drawFlag(ctx) {
@@ -246,7 +275,7 @@
     return { elbow, hand };
   }
 
-  function solidLimb(ctx, x1, y1, x2, y2, w1, w2, color) {
+  function limbPath(ctx, x1, y1, x2, y2, w1, w2) {
     const dx = x2 - x1;
     const dy = y2 - y1;
     const len = Math.hypot(dx, dy) || 1;
@@ -261,26 +290,39 @@
     ctx.lineTo(x1 - px * w1, y1 - py * w1);
     ctx.arc(x1, y1, w1, b, a, false);
     ctx.closePath();
-    ctx.fillStyle = color;
+  }
+
+  function solidLimb(ctx, x1, y1, x2, y2, w1, w2, color) {
+    limbPath(ctx, x1, y1, x2, y2, w1, w2);
+    const g = ctx.createLinearGradient(x1 - 10, y1 - 16, x2 + 8, y2 + 18);
+    g.addColorStop(0, clayLite(color));
+    g.addColorStop(0.38, color);
+    g.addColorStop(1, clayShade(color));
+    ctx.fillStyle = g;
     ctx.fill();
-    ctx.strokeStyle = "#081018";
-    ctx.lineWidth = 3.5;
+    ctx.strokeStyle = clayShade(color);
+    ctx.lineWidth = 1.8;
     ctx.lineJoin = "round";
     ctx.stroke();
+    ctx.save();
+    limbPath(ctx, x1, y1, x2, y2, w1, w2);
+    ctx.clip();
+    ctx.strokeStyle = "rgba(255, 246, 234, 0.42)";
+    ctx.lineWidth = Math.max(2.4, (w1 + w2) * 0.22);
+    ctx.lineCap = "round";
+    ctx.beginPath();
+    ctx.moveTo(x1, y1);
+    ctx.lineTo(x2, y2);
+    ctx.stroke();
+    ctx.restore();
   }
 
   function drawArm(ctx, x, y, part, kit) {
     const elbow = { x: x + part.elbow.x, y: y + part.elbow.y };
     const hand = { x: x + part.hand.x, y: y + part.hand.y };
-    solidLimb(ctx, x, y, elbow.x, elbow.y, 8, 6.5, kit.shirt);
-    solidLimb(ctx, elbow.x, elbow.y, hand.x, hand.y, 6, 5, "#e2ac86");
-    ctx.beginPath();
-    ctx.ellipse(hand.x + 3, hand.y, 8, 6, 0, 0, Math.PI * 2);
-    ctx.fillStyle = "#e2ac86";
-    ctx.fill();
-    ctx.strokeStyle = "#081018";
-    ctx.lineWidth = 3;
-    ctx.stroke();
+    solidLimb(ctx, x, y, elbow.x, elbow.y, 9, 7.5, kit.shirt);
+    solidLimb(ctx, elbow.x, elbow.y, hand.x, hand.y, 6.5, 5.5, SKIN);
+    clayBall(ctx, hand.x + 2, hand.y, 6.2, SKIN);
   }
 
   function drawBoot(ctx, knee, foot) {
@@ -288,25 +330,17 @@
     ctx.save();
     ctx.translate(foot.x, foot.y);
     ctx.rotate(ang * 0.45);
-    ctx.fillStyle = "#0b0e12";
-    ctx.strokeStyle = "#081018";
-    ctx.lineWidth = 3;
     ctx.beginPath();
-    ctx.moveTo(-6, -7);
-    ctx.lineTo(18, -6);
-    ctx.quadraticCurveTo(24, 0, 18, 7);
-    ctx.lineTo(-7, 7);
-    ctx.closePath();
-    ctx.fill();
-    ctx.stroke();
+    ctx.ellipse(6, 0, 16, 8, 0, 0, Math.PI * 2);
+    clayFill(ctx, "#2a241c", -8, -10, 18, 10);
     ctx.restore();
   }
 
   function drawLegParts(ctx, hipX, hipY, part, kit) {
     const knee = { x: hipX + part.knee.x, y: hipY + part.knee.y };
     const foot = { x: hipX + part.foot.x, y: hipY + part.foot.y };
-    solidLimb(ctx, hipX, hipY, knee.x, knee.y, 15, 11, kit.short);
-    solidLimb(ctx, knee.x, knee.y, foot.x, foot.y, 9, 6.5, kit.sock);
+    solidLimb(ctx, hipX, hipY, knee.x, knee.y, 16, 12, kit.short);
+    solidLimb(ctx, knee.x, knee.y, foot.x, foot.y, 10, 7.5, kit.sock);
     drawBoot(ctx, knee, foot);
   }
 
@@ -329,10 +363,9 @@
     ctx.save();
     ctx.translate(hand.x, hand.y);
     ctx.rotate(-0.08);
-    ctx.fillStyle = "#081018";
-    ctx.fillRect(-13, -40, 28, 40);
-    ctx.fillStyle = "#e10600";
-    ctx.fillRect(-10, -37, 22, 34);
+    ctx.beginPath();
+    ctx.roundRect(-11, -38, 24, 36, 4);
+    clayFill(ctx, "#d0122a", -10, -40, 8, -4);
     ctx.restore();
   }
 
@@ -345,16 +378,13 @@
     drawLegParts(ctx, 0, hipY, backLeg, kit);
 
     ctx.beginPath();
-    ctx.moveTo(-22, hipY - 6);
-    ctx.quadraticCurveTo(-8, hipY - 16, 16, hipY - 8);
-    ctx.lineTo(18, hipY + 22);
-    ctx.quadraticCurveTo(4, hipY + 32, -16, hipY + 22);
+    ctx.moveTo(-24, hipY - 4);
+    ctx.quadraticCurveTo(-6, hipY - 20, 18, hipY - 6);
+    ctx.quadraticCurveTo(26, hipY + 12, 14, hipY + 28);
+    ctx.quadraticCurveTo(0, hipY + 38, -18, hipY + 24);
+    ctx.quadraticCurveTo(-30, hipY + 10, -24, hipY - 4);
     ctx.closePath();
-    ctx.fillStyle = kit.short;
-    ctx.fill();
-    ctx.lineWidth = 3.5;
-    ctx.strokeStyle = "#081018";
-    ctx.stroke();
+    clayFill(ctx, kit.short, -20, hipY - 18, 16, hipY + 34);
 
     ctx.save();
     ctx.translate(0, hipY);
@@ -364,17 +394,14 @@
     const armB = makeArm(pose.shoulderR);
     const backArm = pose.shoulderL <= pose.shoulderR ? armA : armB;
     const frontArm = pose.shoulderL <= pose.shoulderR ? armB : armA;
-    drawArm(ctx, -4, -50, backArm, kit);
+    drawArm(ctx, -2, -58, backArm, kit);
 
     torsoPath(ctx);
-    ctx.fillStyle = kit.shirt;
-    ctx.fill();
-    ctx.lineWidth = 3.5;
-    ctx.strokeStyle = "#081018";
-    ctx.stroke();
+    clayFill(ctx, kit.shirt, -16, -82, 20, 8);
     if (p.kit === "ref") {
-      ctx.fillStyle = "#f4f7fb";
-      ctx.fillRect(-18, -62, 36, 8);
+      ctx.beginPath();
+      ctx.roundRect(-16, -64, 32, 9, 4);
+      clayFill(ctx, "#f4efe6", -16, -66, 8, -52);
     }
 
     if (p.num && sc >= 0.72 && p.kit !== "ref") {
@@ -392,7 +419,7 @@
     drawHead(ctx);
     if (p.flag) drawFlag(ctx);
     if ((p.card || 0) > 0.02) drawRaisedCard(ctx, p.card);
-    else drawArm(ctx, 6, -48, frontArm, kit);
+    else drawArm(ctx, 4, -56, frontArm, kit);
     ctx.restore();
 
     drawLegParts(ctx, 1, hipY, frontLeg, kit);
@@ -420,8 +447,8 @@
     ctx.save();
     ctx.scale(1, 0.22);
     ctx.beginPath();
-    ctx.ellipse(0, 8, 42, 42, 0, 0, Math.PI * 2);
-    ctx.fillStyle = "rgba(0,0,0,0.45)";
+    ctx.ellipse(0, 10, 46, 46, 0, 0, Math.PI * 2);
+    ctx.fillStyle = "rgba(28, 22, 16, 0.38)";
     ctx.fill();
     ctx.restore();
 
