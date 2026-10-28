@@ -574,7 +574,17 @@
     </div>`;
   }
 
+  const COLD_MS = 3200;
+  const COLD_HIT = 0.48;
+
   function topHTML() {
+    if (state.phase === "cold" || state.phase === "coldhold") {
+      return `<div class="hud"><div class="scorebug">
+        <div class="team mara"><b>MARA</b><em>0</em></div>
+        <div class="clock"><strong>14:20</strong></div>
+        <div class="team keel"><em>0</em><b>KEEL</b></div>
+      </div></div>`;
+    }
     if (["intro", "level", "final"].includes(state.phase)) return "";
     const lv = level();
     const inc = current();
@@ -616,10 +626,11 @@
   }
 
   function introHTML() {
-    return `<div class="scrim intro"></div><div class="poster boot">
+    const scrim = state.coldFrame ? "scrim intro after" : "scrim intro";
+    return `<div class="${scrim}"></div><div class="poster boot">
       <p class="eyebrow">NIGHT MATCH</p>
       <h1><span>THE</span>WHISTLE</h1>
-      <p class="lede">你是这场球的主裁判。</p>
+      <p class="lede">哨响。比赛停在这一下。</p>
       <button type="button" class="start" data-act="start">开始</button>
     </div>`;
   }
@@ -948,6 +959,40 @@
     beginIncident();
   }
 
+  function showCold() {
+    state.phase = "cold";
+    state.since = performance.now();
+    state.phaseTotal = COLD_MS;
+    state.until = state.since + COLD_MS * COLD_HIT;
+    state.coldFrame = false;
+    state.holdT = null;
+    state.level = 0;
+    state.index = 0;
+    state.results = [];
+    state.sheet = [];
+    document.body.dataset.phase = "cold";
+    $("stamp").hidden = true;
+    $("overlay").innerHTML = "";
+    renderChrome();
+  }
+
+  function coldHit() {
+    state.phase = "coldhold";
+    state.holdT = 0.7;
+    state.pulse = 1;
+    state.since = performance.now();
+    state.until = state.since + 1100;
+    document.body.dataset.phase = "coldhold";
+    const stamp = $("stamp");
+    stamp.hidden = false;
+    stamp.className = "cold";
+    stamp.innerHTML = `<div class="mark"><div class="en">FOUL</div><div class="zh">吹停</div></div>`;
+    shake();
+    flash("bad");
+    AudioBus.whistle();
+    renderChrome();
+  }
+
   function showIntro() {
     state.phase = "intro";
     state.until = 0;
@@ -955,6 +1000,8 @@
     state.index = 0;
     state.results = [];
     state.sheet = [];
+    state.coldFrame = true;
+    state.holdT = 0.7;
     document.body.dataset.phase = "intro";
     $("stamp").hidden = true;
     renderChrome();
@@ -1043,6 +1090,8 @@
 
   function step(now) {
     if (!state.until || now < state.until) return;
+    if (state.phase === "cold") return coldHit();
+    if (state.phase === "coldhold") return showIntro();
     if (state.phase === "look") enterCall();
     else if (state.phase === "call") choose("late");
     else if (state.phase === "card") chooseCard("verbal", true);
@@ -1064,6 +1113,19 @@
     let actors = [];
     let pitch = "box";
     let face = false;
+    if (state.phase === "cold" || state.phase === "coldhold" || (state.phase === "intro" && state.coldFrame)) {
+      const t = state.phase === "cold" ? clamp((now - state.since) / COLD_MS, 0, 1) : 0.7;
+      const zoom = state.phase === "cold" ? lerp(1.16, 1.52, smooth(0.12, COLD_HIT, t)) : 1.46;
+      return {
+        dpr: size.dpr,
+        cam: { x: 1000, y: 860, zoom },
+        actors: ankleActors(t),
+        pitch: "box",
+        face: false,
+        pulse: state.pulse,
+        vignette: state.phase === "intro" ? 0.34 : 0.42,
+      };
+    }
     if (state.phase === "intro" || state.phase === "level" || state.phase === "final") {
       cam = { x: 860, y: 720, zoom: 1.2 };
       actors = idleActors(now);
@@ -1109,6 +1171,6 @@
   window.addEventListener("resize", fit);
 
   makeGrain();
-  showIntro();
+  showCold();
   requestAnimationFrame(loop);
 })();

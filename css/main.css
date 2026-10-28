@@ -119,6 +119,8 @@ body[data-phase="final"] #top,
 body[data-phase="intro"] #dock,
 body[data-phase="level"] #dock,
 body[data-phase="final"] #dock,
+body[data-phase="cold"] #dock,
+body[data-phase="coldhold"] #dock,
 body[data-phase="stamp"] #dock {
   display: none;
 }
@@ -470,7 +472,7 @@ body[data-phase="stamp"] #dock {
   background: rgba(7, 10, 18, 0.58);
 }
 
-#stamp[hidden] { display: none; }
+#stamp.cold { background: rgba(7, 10, 18, 0.22); }
 
 .mark {
   text-align: center;
@@ -584,8 +586,8 @@ body[data-phase="stamp"] #dock {
   pointer-events: none;
 }
 
-.scrim.intro {
-  background: linear-gradient(90deg, rgba(7, 10, 18, 0.94) 0%, rgba(7, 10, 18, 0.86) 32%, rgba(7, 10, 18, 0.2) 70%, rgba(7, 10, 18, 0.12) 100%);
+.scrim.intro.after {
+  background: linear-gradient(90deg, rgba(7, 10, 18, 0.9) 0%, rgba(7, 10, 18, 0.62) 36%, rgba(7, 10, 18, 0.12) 72%, rgba(7, 10, 18, 0.08) 100%);
 }
 
 .scrim.end {
