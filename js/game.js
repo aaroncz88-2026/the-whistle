@@ -267,9 +267,9 @@
     kicker: "",
     pitch: "box",
     cameras: {
-      left: { x: 1000, y: 860, zoom: 1.38 },
-      center: { x: 1000, y: 860, zoom: 1.38 },
-      right: { x: 1000, y: 860, zoom: 1.38 },
+      left: { x: 1000, y: 740, zoom: 1.16 },
+      center: { x: 1000, y: 740, zoom: 1.16 },
+      right: { x: 1000, y: 740, zoom: 1.16 },
     },
     actors: ankleActors,
     bestCard: null,
@@ -419,9 +419,9 @@
           kicker: "",
           pitch: "open",
           cameras: {
-            left: { x: 1000, y: 860, zoom: 1.38 },
-            center: { x: 1000, y: 860, zoom: 1.38 },
-            right: { x: 1000, y: 860, zoom: 1.38 },
+            left: { x: 1020, y: 740, zoom: 1.16 },
+            center: { x: 1020, y: 740, zoom: 1.16 },
+            right: { x: 1020, y: 740, zoom: 1.16 },
           },
           actors: diveFrontActors,
           bestCard: null,
@@ -1115,10 +1115,10 @@
     let face = false;
     if (state.phase === "cold" || state.phase === "coldhold" || (state.phase === "intro" && state.coldFrame)) {
       const t = state.phase === "cold" ? clamp((now - state.since) / COLD_MS, 0, 1) : 0.7;
-      const zoom = state.phase === "cold" ? lerp(1.16, 1.52, smooth(0.12, COLD_HIT, t)) : 1.46;
+      const zoom = state.phase === "cold" ? lerp(1.02, 1.14, smooth(0.12, COLD_HIT, t)) : 1.08;
       return {
         dpr: size.dpr,
-        cam: { x: 1000, y: 860, zoom },
+        cam: { x: 1000, y: 740, zoom },
         actors: ankleActors(t),
         pitch: "box",
         face: false,

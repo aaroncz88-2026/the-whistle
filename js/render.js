@@ -89,81 +89,146 @@
     ctx.restore();
   }
 
-  function joint(x, y) { return { x, y }; }
-  function leg(kx, ky, fx, fy) { return { knee: joint(kx, ky), foot: joint(fx, fy) }; }
-  function arm(ex, ey, hx, hy) { return { elbow: joint(ex, ey), hand: joint(hx, hy) }; }
-  function pose(lean, drop, legL, legR, armL, armR) {
-    return { lean, drop, legL, legR, armL, armR };
+  const THIGH = 36;
+  const SHIN = 34;
+  const UPPER = 32;
+  const FORE = 24;
+
+  function tip(len, deg) {
+    const a = (deg * Math.PI) / 180;
+    return { x: Math.sin(a) * len, y: Math.cos(a) * len };
+  }
+
+  function pose(lean, hipL, kneeL, hipR, kneeR, shoulderL, shoulderR) {
+    return { lean, hipL, kneeL, hipR, kneeR, shoulderL, shoulderR, elbow: 68 };
   }
 
   function mixPose(a, b, t) {
     const u = Math.max(0, Math.min(1, t || 0));
     const n = (x, y) => x + (y - x) * u;
-    const pt = (p, q) => joint(n(p.x, q.x), n(p.y, q.y));
-    const mixLeg = (p, q) => ({ knee: pt(p.knee, q.knee), foot: pt(p.foot, q.foot) });
-    const mixArm = (p, q) => ({ elbow: pt(p.elbow, q.elbow), hand: pt(p.hand, q.hand) });
     return pose(
       n(a.lean, b.lean),
-      n(a.drop, b.drop),
-      mixLeg(a.legL, b.legL),
-      mixLeg(a.legR, b.legR),
-      mixArm(a.armL, b.armL),
-      mixArm(a.armR, b.armR)
+      n(a.hipL, b.hipL),
+      n(a.kneeL, b.kneeL),
+      n(a.hipR, b.hipR),
+      n(a.kneeR, b.kneeR),
+      n(a.shoulderL, b.shoulderL),
+      n(a.shoulderR, b.shoulderR)
+    );
+  }
+
+  const RUN_LEG = [
+    [0, 48, 20],
+    [0.18, 6, 36],
+    [0.36, -30, 16],
+    [0.55, 40, 108],
+    [0.78, 52, 36],
+    [1, 48, 20],
+  ];
+  const RUN_ARM = [
+    [0, 58],
+    [0.5, -62],
+    [1, 58],
+  ];
+
+  function sampleCycle(phase, keys) {
+    const t = ((phase % 1) + 1) % 1;
+    let i = 0;
+    while (i < keys.length - 1 && keys[i + 1][0] < t) i += 1;
+    const a = keys[i];
+    const b = keys[i + 1];
+    const span = b[0] - a[0] || 1;
+    const u = Math.max(0, Math.min(1, (t - a[0]) / span));
+    const s = u * u * (3 - 2 * u);
+    const out = [];
+    for (let k = 1; k < a.length; k += 1) out.push(a[k] + (b[k] - a[k]) * s);
+    return out;
+  }
+
+  function gait(phase, lean, legScale, armScale) {
+    const left = sampleCycle(phase, RUN_LEG);
+    const right = sampleCycle(phase + 0.5, RUN_LEG);
+    const armL = sampleCycle(phase + 0.5, RUN_ARM)[0] * armScale;
+    const armR = sampleCycle(phase, RUN_ARM)[0] * armScale;
+    return pose(
+      lean,
+      left[0] * legScale,
+      12 + (left[1] - 12) * legScale,
+      right[0] * legScale,
+      12 + (right[1] - 12) * legScale,
+      armL,
+      armR
     );
   }
 
   function poseOf(name, phase) {
-    const s = Math.sin((phase || 0) * Math.PI * 2);
-    const liftL = Math.max(s, 0);
-    const liftR = Math.max(-s, 0);
-    const standL = leg(-8, 36, -6, 72);
-    const standR = leg(10, 36, 14, 72);
-    const hangL = arm(-8, 24, -4, 48);
-    const hangR = arm(10, 24, 6, 48);
-    const runL = leg(-8 + 12 * s, 34 - 8 * liftL, -4 + 18 * s, 72 - 30 * liftL);
-    const runR = leg(10 - 12 * s, 34 - 8 * liftR, 16 - 18 * s, 72 - 30 * liftR);
-    const runAL = arm(-6 - 10 * s, 18, -2 - 8 * s, 40 - 8 * liftR);
-    const runAR = arm(8 + 10 * s, 18, 4 + 8 * s, 40 - 8 * liftL);
     switch (name) {
       case "jog":
-        return pose(2, 0, leg(-8 + 8 * s, 36, -4 + 10 * s, 72 - 12 * liftL), leg(10 - 8 * s, 36, 14 - 10 * s, 72 - 12 * liftR), runAL, runAR);
+        return gait(phase, 3, 0.55, 0.6);
       case "run":
       case "dribble":
-        return pose(6, 2, runL, runR, runAL, runAR);
+        return gait(phase, 8, 1, 1);
       case "slide":
       case "strike":
-        return pose(18, 34, leg(-16, 10, -6, 38), leg(40, 14, 82, 38), arm(-18, 8, -28, 28), arm(22, 6, 40, 22));
+        return pose(12, -18, 96, 70, 14, -22, 18);
       case "brake":
-        return pose(-8, 6, leg(-4, 30, -2, 66), leg(18, 28, 22, 66), hangL, hangR);
+        return pose(-6, 8, 36, 18, 42, -8, 10);
       case "trip": {
         const u = Math.max(0, Math.min(1, phase));
-        const ground = 72 - (4 + 12 * u);
-        return pose(8 + 20 * u, 4 + 12 * u, leg(-6, 30, -12, ground), leg(16, 28, 18, ground), arm(-4, 16, 8, 36), arm(18, 12, 28, 30));
+        return pose(10 + 12 * u, 6, 28 + 10 * u, 18, 32 + 8 * u, -8, 12);
       }
       case "sell": {
         const u = Math.max(0, Math.min(1, phase));
-        const ground = 72 - (8 + 16 * u);
-        return pose(-8 - 24 * u, 8 + 16 * u, leg(4, 24, 6, ground), leg(22, 20, 30, ground), arm(-6, -8, -2, -32), arm(16, -12, 26, -36));
+        return pose(-8 - 14 * u, 10, 48 + 16 * u, 16, 52 + 14 * u, -16, 8);
       }
       case "fall":
       case "down": {
         const u = name === "down" ? 1 : Math.max(0, Math.min(1, phase));
-        const ground = 72 - (10 + 18 * u);
-        return pose(-10 - 26 * u, 10 + 18 * u, leg(2, 22, 4, ground), leg(20, 18, 26, ground), arm(-8, -6, 0, -28), arm(14, -8, 24, -30));
+        return pose(-6 - 16 * u, 8, 40 + 20 * u, 14, 44 + 18 * u, -12, 6);
       }
       case "elbow":
-        return pose(4, 0, standL, standR, hangL, arm(24, 8, 36, -8));
+        return pose(4, 4, 16, 8, 18, 6, 28);
       case "pull":
-        return pose(8, 0, standL, standR, hangL, arm(26, 10, 40, 6));
+        return pose(6, 4, 14, 8, 16, 4, 36);
       case "pulled":
-        return pose(16, 4, leg(-2, 32, 0, 68), leg(14, 30, 16, 68), arm(8, 8, 22, -6), hangR);
+        return pose(12, 6, 24, 10, 28, 20, -6);
       case "appeal":
-        return pose(-4, 0, standL, standR, arm(-10, -6, -6, -34), arm(12, -8, 18, -36));
+        return pose(-4, 4, 12, 6, 14, -28, 24);
       case "wall":
-        return pose(2, 0, standL, standR, arm(-20, 4, -8, 28), arm(22, 6, 8, 30));
+        return pose(2, 4, 12, 6, 14, -8, 10);
       default:
-        return pose(0, 0, standL, standR, hangL, hangR);
+        return pose(0, 4, 12, 6, 14, 4, -4);
     }
+  }
+
+  function makeLeg(hipDeg, kneeBend) {
+    const bend = Math.max(8, Math.min(110, kneeBend));
+    const knee = tip(THIGH, hipDeg);
+    const foot = {
+      x: knee.x + tip(SHIN, hipDeg - bend).x,
+      y: knee.y + tip(SHIN, hipDeg - bend).y,
+    };
+    return { knee, foot };
+  }
+
+  function makeArm(shoulderDeg) {
+    const elbow = tip(UPPER, shoulderDeg);
+    let fore = shoulderDeg + 86;
+    if (fore > 98) fore = 98;
+    if (fore < 18) fore = 18;
+    const hand = {
+      x: elbow.x + tip(FORE, fore).x,
+      y: elbow.y + tip(FORE, fore).y,
+    };
+    return { elbow, hand };
+  }
+
+  function drawArm(ctx, x, y, part, kit) {
+    const elbow = { x: x + part.elbow.x, y: y + part.elbow.y };
+    const hand = { x: x + part.hand.x, y: y + part.hand.y };
+    drawBone(ctx, x, y, elbow.x, elbow.y, 9, kit.shirt);
+    drawBone(ctx, elbow.x, elbow.y, hand.x, hand.y, 7, "#e2ac86");
+    drawHand(ctx, hand);
   }
 
   function drawBone(ctx, x1, y1, x2, y2, width, color) {
@@ -220,16 +285,18 @@
     ctx.fill();
     ctx.restore();
 
-    const hipY = -74 + pose.drop;
-    drawLegParts(ctx, -8, hipY, pose.legL, kit);
-    drawLegParts(ctx, 8, hipY, pose.legR, kit);
+    const leftLeg = makeLeg(pose.hipL, pose.kneeL);
+    const rightLeg = makeLeg(pose.hipR, pose.kneeR);
+    const hipY = -Math.max(leftLeg.foot.y, rightLeg.foot.y);
+    const backLeg = pose.hipL <= pose.hipR ? leftLeg : rightLeg;
+    const frontLeg = pose.hipL <= pose.hipR ? rightLeg : leftLeg;
+    drawLegParts(ctx, 0, hipY, backLeg, kit);
 
     ctx.beginPath();
-    ctx.moveTo(-20, hipY - 4);
-    ctx.lineTo(20, hipY - 4);
-    ctx.lineTo(16, hipY + 22);
-    ctx.lineTo(0, hipY + 16);
-    ctx.lineTo(-16, hipY + 22);
+    ctx.moveTo(-18, hipY - 2);
+    ctx.lineTo(16, hipY - 2);
+    ctx.lineTo(12, hipY + 20);
+    ctx.lineTo(-14, hipY + 20);
     ctx.closePath();
     ctx.fillStyle = kit.short;
     ctx.fill();
@@ -241,8 +308,14 @@
     ctx.translate(0, hipY);
     ctx.rotate((pose.lean * Math.PI) / 180);
 
+    const armA = makeArm(pose.shoulderL);
+    const armB = makeArm(pose.shoulderR);
+    const backArm = pose.shoulderL <= pose.shoulderR ? armA : armB;
+    const frontArm = pose.shoulderL <= pose.shoulderR ? armB : armA;
+    drawArm(ctx, -4, -50, backArm, kit);
+
     ctx.save();
-    ctx.translate(-3, -4);
+    ctx.translate(-2, -4);
     torsoPath(ctx);
     ctx.fillStyle = "rgba(94,242,224,0.95)";
     ctx.fill();
@@ -259,27 +332,19 @@
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
       ctx.fillStyle = kit.num;
-      ctx.fillText(String(p.num), 0, -32);
+      ctx.fillText(String(p.num), 1, -34);
     }
     if (p.band) {
       ctx.fillStyle = "#5ef2e0";
-      ctx.fillRect(-28, -46, 10, 8);
+      ctx.fillRect(-22, -48, 10, 7);
     }
-
-    [["L", -16, -50, pose.armL], ["R", 16, -50, pose.armR]].forEach((spec) => {
-      const x = spec[1];
-      const y = spec[2];
-      const part = spec[3];
-      const elbow = { x: x + part.elbow.x, y: y + part.elbow.y };
-      const hand = { x: x + part.hand.x, y: y + part.hand.y };
-      drawBone(ctx, x, y, elbow.x, elbow.y, 9, kit.shirt);
-      drawBone(ctx, elbow.x, elbow.y, hand.x, hand.y, 7, "#e2ac86");
-      drawHand(ctx, hand);
-    });
 
     drawHead(ctx);
     if (p.flag) drawFlag(ctx);
+    drawArm(ctx, 6, -48, frontArm, kit);
     ctx.restore();
+
+    drawLegParts(ctx, 1, hipY, frontLeg, kit);
     ctx.restore();
   }
 
