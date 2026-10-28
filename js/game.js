@@ -117,24 +117,25 @@
 
   function ankleActors(t) {
     const ground = 792;
-    const runIn = smooth(0.02, 0.26, t);
-    const drop = smooth(0.22, 0.4, t);
-    const through = smooth(0.36, 0.58, t);
-    const fall = smooth(0.44, 0.78, t);
-    const defX = lerp(640, lerp(948, 1004, through), Math.max(runIn, drop));
-    const atkX = lerp(1056, 1110, fall * 0.35);
-    const ballT = smooth(0.46, 0.78, t);
+    const runIn = smooth(0.02, 0.24, t);
+    const drop = smooth(0.2, 0.38, t);
+    const through = smooth(0.34, 0.62, t);
+    const fall = smooth(0.42, 0.74, t);
+    const footX = 1100;
+    const defX = lerp(600, lerp(960, 1088, through), Math.max(runIn, drop));
+    const bootX = defX + 118;
+    const ballT = smooth(0.44, 0.8, t);
     const list = [
       P({
-        x: atkX,
-        y: t < 0.58 ? ground - 10 : ground + 8,
+        x: footX,
+        y: fall < 0.55 ? ground - 14 : ground + 12,
         s: 1.6,
         kit: "mara",
         num: "10",
         pose: "dribble",
         poseTo: "swept",
         blend: fall,
-        phase: t * 2.1,
+        phase: t * 2,
         phaseTo: 1,
         pitch: fall,
         band: true,
@@ -148,21 +149,23 @@
         pose: "run",
         poseTo: "slide",
         blend: drop,
-        phase: t * 2.3,
+        phase: t * 2.2,
         phaseTo: 1,
-        slide: drop,
+        slide: Math.max(drop, through > 0.2 ? 1 : 0),
       }),
       {
         type: "ball",
-        x: lerp(atkX + 34, 1320, ballT),
+        x: ballT < 0.02 ? footX + 42 : lerp(footX + 42, 1380, ballT),
         y: ground + 6,
-        z: ballT < 0.04 ? 6 : Math.sin(ballT * Math.PI) * 96,
+        z: ballT < 0.02 ? 4 : Math.sin(Math.min(1, ballT) * Math.PI) * 120,
         s: 1.05,
       },
     ];
-    if (t > 0.4 && t < 0.72) {
-      const a = t < 0.5 ? (t - 0.4) / 0.1 : 1 - (t - 0.5) / 0.22;
-      list.push({ type: "dust", x: lerp(980, 1088, through), y: ground + 6, a: Math.max(0, a) });
+    if (drop > 0.35) {
+      for (let i = 0; i < 4; i += 1) {
+        const fade = Math.max(0, 0.9 - i * 0.2) * (t < 0.78 ? 1 : 0.4);
+        list.push({ type: "dust", x: bootX - i * 42, y: ground + 8, a: fade });
+      }
     }
     return list;
   }

@@ -438,7 +438,7 @@
     if ((p.pitch || 0) > 0.08) {
       const u = Math.max(0, Math.min(1, p.pitch));
       ctx.save();
-      ctx.rotate(u * 1.22);
+      ctx.rotate(u * 1.42);
       const sweptL = makeLeg(pose.hipL, pose.kneeL);
       const sweptR = makeLeg(pose.hipR, pose.kneeR);
       paintFigure(ctx, p, kit, pose, -Math.max(sweptL.foot.y, sweptR.foot.y));
