@@ -116,31 +116,95 @@
   }
 
   function ankleActors(t) {
-    const approach = smooth(0.12, 0.46, t);
-    const fall = smooth(0.5, 0.9, t);
+    const ground = 792;
+    const approach = smooth(0.04, 0.38, t);
+    const strike = smooth(0.32, 0.48, t);
+    const down = smooth(0.48, 0.8, t);
+    const defX = lerp(720, 900, Math.max(approach, strike));
+    const atkX = lerp(1040, 1120, down);
+    const ballT = smooth(0.48, 0.78, t);
     const list = [
       P({
-        x: lerp(760, 920, approach),
-        y: 752,
-        s: 1.62,
+        x: defX,
+        y: ground,
+        s: 1.55,
         kit: "keel",
         num: "4",
-        pose: t < 0.46 ? "run" : "slide",
-        phase: t * 2,
+        pose: "run",
+        poseTo: "strike",
+        blend: strike,
+        phase: t * 2.4,
+        phaseTo: 1,
       }),
       P({
-        x: lerp(1080, 1000, fall),
-        y: 736,
-        s: 1.7,
+        x: atkX,
+        y: ground,
+        s: 1.62,
         kit: "mara",
         num: "10",
-        pose: t < 0.5 ? "dribble" : "fall",
-        phase: t < 0.5 ? t * 2.2 : fall,
+        pose: "dribble",
+        poseTo: "trip",
+        blend: down,
+        phase: t * 2.2,
+        phaseTo: down,
         band: true,
       }),
-      { type: "ball", x: lerp(1140, 1220, Math.max(approach, fall)), y: 768, z: fall * 36, s: 1.08 },
+      {
+        type: "ball",
+        x: lerp(atkX + 46, 1240, ballT),
+        y: ground + 6,
+        z: ballT < 0.04 ? 8 : Math.sin(ballT * Math.PI) * 78,
+        s: 1.05,
+      },
     ];
-    if (t > 0.48 && t < 0.72) list.push({ type: "impact", x: 980, y: 700, a: 0.95 });
+    if (t > 0.46 && t < 0.7) {
+      const a = t < 0.54 ? (t - 0.46) / 0.08 : 1 - (t - 0.54) / 0.16;
+      list.push({ type: "dust", x: 1005, y: ground + 8, a: Math.max(0, a) });
+    }
+    return list;
+  }
+
+  function diveFrontActors(t) {
+    const ground = 792;
+    const chase = smooth(0.04, 0.36, t);
+    const brake = smooth(0.32, 0.48, t);
+    const sell = smooth(0.56, 0.9, t);
+    const defX = lerp(680, 860, chase);
+    const atkX = 1160;
+    const list = [
+      P({
+        x: defX,
+        y: ground,
+        s: 1.5,
+        kit: "keel",
+        num: "4",
+        pose: "run",
+        poseTo: "brake",
+        blend: brake,
+        phase: t * 2.6,
+        phaseTo: 1,
+      }),
+      P({
+        x: atkX,
+        y: ground,
+        s: 1.58,
+        kit: "mara",
+        num: "9",
+        pose: "dribble",
+        poseTo: "sell",
+        blend: sell,
+        phase: t * 2.4,
+        phaseTo: sell,
+        band: true,
+      }),
+      {
+        type: "ball",
+        x: lerp(atkX + 48, 1320, smooth(0.2, 0.7, t)),
+        y: ground + 6,
+        z: 10,
+        s: 1.05,
+      },
+    ];
     return list;
   }
 
@@ -203,9 +267,9 @@
     kicker: "",
     pitch: "box",
     cameras: {
-      left: { x: 980, y: 820, zoom: 1.55 },
-      center: { x: 980, y: 820, zoom: 1.55 },
-      right: { x: 980, y: 820, zoom: 1.55 },
+      left: { x: 1000, y: 860, zoom: 1.38 },
+      center: { x: 1000, y: 860, zoom: 1.38 },
+      right: { x: 1000, y: 860, zoom: 1.38 },
     },
     actors: ankleActors,
     bestCard: null,
@@ -355,13 +419,11 @@
           kicker: "",
           pitch: "open",
           cameras: {
-            left: { x: 960, y: 800, zoom: 1.55 },
-            center: { x: 960, y: 800, zoom: 1.55 },
-            right: { x: 960, y: 800, zoom: 1.55 },
+            left: { x: 1000, y: 860, zoom: 1.38 },
+            center: { x: 1000, y: 860, zoom: 1.38 },
+            right: { x: 1000, y: 860, zoom: 1.38 },
           },
-          actors(t) {
-            return diveActors(t).filter((actor) => actor.type !== "impact");
-          },
+          actors: diveFrontActors,
           bestCard: null,
           live: diveCall.live,
           grade(res) {

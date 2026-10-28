@@ -89,6 +89,21 @@
     ctx.restore();
   }
 
+  function mixPose(a, b, t) {
+    const u = Math.max(0, Math.min(1, t || 0));
+    const n = (x, y) => x + (y - x) * u;
+    const leg = (p, q) => ({ hip: n(p.hip, q.hip), knee: n(p.knee, q.knee) });
+    const arm = (p, q) => ({ up: n(p.up, q.up), fore: n(p.fore, q.fore) });
+    return {
+      body: n(a.body, b.body),
+      drop: n(a.drop, b.drop),
+      legL: leg(a.legL, b.legL),
+      legR: leg(a.legR, b.legR),
+      armL: arm(a.armL, b.armL),
+      armR: arm(a.armR, b.armR),
+    };
+  }
+
   function poseOf(name, phase) {
     const s = Math.sin(phase * Math.PI * 2);
     const pack = (body, drop, lHip, lKnee, rHip, rKnee, la, lf, ra, rf) => ({
@@ -107,6 +122,22 @@
         return pack(0.1, 0, 36 * s, 16 + 20 * Math.max(-s, 0), -36 * s, 16 + 20 * Math.max(s, 0), -32 * s, 14, 32 * s, 12);
       case "slide":
         return pack(-1.05, 28, -24, 36, 62, 8, -70, 16, 86, -8);
+      case "strike":
+        return pack(0.62, 40, -36, 62, 74, 8, -24, 18, 36, 8);
+      case "brake":
+        return pack(-0.18, 8, 18, 16, -30, 28, -36, 12, 22, 10);
+      case "trip": {
+        const u = Math.max(0, Math.min(1, phase));
+        const lean = 0.16 + 1.05 * u;
+        const plant = (lean * 180) / Math.PI;
+        return pack(lean, 12 + 14 * u, plant - 16, 18, plant + 6, 20, -22, 12, 30, 8);
+      }
+      case "sell": {
+        const u = Math.max(0, Math.min(1, phase));
+        const lean = -0.1 - 1.02 * u;
+        const plant = (lean * 180) / Math.PI;
+        return pack(lean, 10 + 18 * u, plant - 6, 16, plant + 8, 18, -96, 10, 102, -8);
+      }
       case "fall":
         return pack(-1.2 * Math.max(0, Math.min(1, phase)), 16 * phase, 18, 12, -8, 48, -150, 20, -96, 16);
       case "down":
@@ -128,7 +159,8 @@
 
   function drawPlayer(ctx, p) {
     const kit = KITS[p.kit] || KITS.mara;
-    const pose = poseOf(p.pose, p.phase || 0);
+    const base = poseOf(p.pose, p.phase || 0);
+    const pose = p.poseTo ? mixPose(base, poseOf(p.poseTo, p.phaseTo == null ? p.phase || 0 : p.phaseTo), p.blend || 0) : base;
     const sc = p.s || 1;
     ctx.save();
     ctx.translate(p.x, p.y);
@@ -256,6 +288,22 @@
     ctx.lineTo(78, -112);
     ctx.lineTo(88, -4);
     ctx.stroke();
+    ctx.restore();
+  }
+
+  function drawDust(ctx, a) {
+    const alpha = Math.max(0, Math.min(1, a.a == null ? 1 : a.a));
+    ctx.save();
+    ctx.translate(a.x, a.y);
+    ctx.globalAlpha = alpha;
+    ctx.fillStyle = "rgba(244,247,251,0.62)";
+    ctx.beginPath();
+    ctx.ellipse(0, 0, 34, 9, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.ellipse(-22, -8, 12, 6, 0, 0, Math.PI * 2);
+    ctx.ellipse(26, -5, 10, 5, 0, 0, Math.PI * 2);
+    ctx.fill();
     ctx.restore();
   }
 
@@ -478,7 +526,7 @@
     if (a.type === "goal") return a.y - 40;
     if (a.type === "speed") return a.y - 8;
     if (a.type === "cloth") return a.y1 + 24;
-    if (a.type === "impact") return a.y + 40;
+    if (a.type === "impact" || a.type === "dust") return a.y + 40;
     return a.y || 0;
   }
 
@@ -489,6 +537,7 @@
       else if (a.type === "ball") drawBall(ctx, a);
       else if (a.type === "goal") drawGoal(ctx, a);
       else if (a.type === "impact") drawImpact(ctx, a);
+      else if (a.type === "dust") drawDust(ctx, a);
       else if (a.type === "cloth") drawCloth(ctx, a);
       else if (a.type === "speed") drawSpeed(ctx, a);
     });
