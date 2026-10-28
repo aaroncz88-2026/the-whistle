@@ -592,6 +592,19 @@ body[data-phase="stamp"] #dock {
 
 .poster { padding-top: 16vh; }
 
+.poster.boot .lede {
+  margin-bottom: 0;
+}
+
+.poster.boot .start {
+  margin-top: 40px;
+  min-width: 196px;
+  padding: 18px 36px;
+  font-size: 28px;
+  letter-spacing: 0.32em;
+  text-indent: 0.32em;
+}
+
 .eyebrow {
   margin: 0 0 16px;
   font-family: var(--display);

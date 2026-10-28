@@ -472,19 +472,11 @@
   }
 
   function introHTML() {
-    return `<div class="scrim intro"></div><div class="poster">
-      <p class="eyebrow">THREE MATCHES</p>
+    return `<div class="scrim intro"></div><div class="poster boot">
+      <p class="eyebrow">NIGHT MATCH</p>
       <h1><span>THE</span>WHISTLE</h1>
-      <p class="lede">三关。每一关是一场比赛里的几次关键判罚。<br>过线才进下一关。判罚时可以逐帧回看，末帧不一定是真相。</p>
-      <ul class="keys">
-        <li><kbd>A</kbd><kbd>D</kbd> 转头</li>
-        <li><kbd>W</kbd> 回中</li>
-        <li><kbd>Q</kbd><kbd>E</kbd> 逐帧</li>
-        <li><kbd>空格</kbd> 吹停</li>
-        <li><kbd>F</kbd> 有利</li>
-        <li><kbd>C</kbd> 继续</li>
-      </ul>
-      <button type="button" class="start" data-act="start">第一关</button>
+      <p class="lede">你是这场球的主裁判。</p>
+      <button type="button" class="start" data-act="start">开始</button>
     </div>`;
   }
 
