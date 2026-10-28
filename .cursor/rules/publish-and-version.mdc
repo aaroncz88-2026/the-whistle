@@ -1,0 +1,14 @@
+---
+description: 每次改动都更新版本号、版本日志，并推送到公开网页
+alwaysApply: true
+---
+
+# 版本与公开网页
+
+玩家能看到的改动，做完后同一轮里完成这三步：
+
+1. 把 `package.json` 的 `version` 和 `js/version.js` 里 `LOG[0]` 一起升一档。小改动升最后一位，例如 `0.1.0` → `0.1.1`。
+2. 在 `js/version.js` 的 `LOG` 最上面加一条：版本号、日期 `YYYY-MM-DD`、一句玩家能看懂的中文说明。右下角按钮读的就是这条。
+3. 提交并推送到 `origin` 的 `main`。公开地址是 https://aaroncz88-2026.github.io/the-whistle/ 。不要提交 `node_modules/` 和 `release/`。
+
+桌面独立程序另行打包，不代替这次推送。

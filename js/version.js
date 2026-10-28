@@ -1,0 +1,40 @@
+(function () {
+  const LOG = [
+    {
+      version: "0.1.0",
+      date: "2026-10-28",
+      notes: "三关可玩 DEMO 公开。接触、有利、出牌。网页和桌面独立窗口是同一版。",
+    },
+  ];
+
+  const current = LOG[0];
+  const button = document.getElementById("ver");
+  const panel = document.getElementById("verlog");
+  const list = panel.querySelector("ol");
+
+  button.textContent = "v" + current.version;
+
+  list.innerHTML = LOG.map((entry) => {
+    return `<li><b>v${entry.version}</b><time>${entry.date}</time><p>${entry.notes}</p></li>`;
+  }).join("");
+
+  function setOpen(open) {
+    panel.hidden = !open;
+    button.setAttribute("aria-expanded", open ? "true" : "false");
+  }
+
+  button.addEventListener("click", (e) => {
+    e.stopPropagation();
+    setOpen(panel.hidden);
+  });
+
+  document.addEventListener("click", (e) => {
+    if (panel.hidden) return;
+    if (panel.contains(e.target) || e.target === button) return;
+    setOpen(false);
+  });
+
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") setOpen(false);
+  });
+})();
