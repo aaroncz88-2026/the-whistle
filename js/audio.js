@@ -14,6 +14,7 @@
         this.master.connect(this.ctx.destination);
       }
       if (this.ctx.state === "suspended") this.ctx.resume();
+      this.crowd();
       return this.ctx;
     },
 
@@ -59,6 +60,7 @@
       o.start(t);
       o.stop(t + 0.52);
       this.tone(2800, t + 0.16, 0.22, 0.035, "sine");
+      this.roar();
     },
 
     advantage() {
@@ -93,6 +95,65 @@
       g.connect(this.master);
       src.start(t);
       this.tone(180, t, 0.12, 0.05, "sine");
+    },
+
+    crowd() {
+      if (!this.ctx || this.crowdGain) return;
+      const ctx = this.ctx;
+      const seconds = 3.2;
+      const frames = Math.floor(ctx.sampleRate * seconds);
+      const buffer = ctx.createBuffer(1, frames, ctx.sampleRate);
+      const data = buffer.getChannelData(0);
+      let wash = 0;
+      const edge = Math.floor(ctx.sampleRate * 0.06);
+      for (let i = 0; i < frames; i++) {
+        const white = Math.random() * 2 - 1;
+        wash = wash * 0.97 + white * 0.03;
+        const beat = (i / ctx.sampleRate) % 0.46;
+        const shout = beat < 0.2 ? 1.15 : 0.42;
+        let sample = wash * shout * 8;
+        if (i < edge) sample *= i / edge;
+        if (i > frames - edge) sample *= (frames - i) / edge;
+        data[i] = sample;
+      }
+      const src = ctx.createBufferSource();
+      src.buffer = buffer;
+      src.loop = true;
+      const high = ctx.createBiquadFilter();
+      high.type = "highpass";
+      high.frequency.value = 220;
+      const band = ctx.createBiquadFilter();
+      band.type = "bandpass";
+      band.frequency.value = 740;
+      band.Q.value = 0.65;
+      const bed = ctx.createGain();
+      bed.gain.value = 0.16;
+      const react = ctx.createGain();
+      react.gain.value = 1;
+      const lfo = ctx.createOscillator();
+      const depth = ctx.createGain();
+      lfo.frequency.value = 0.07;
+      depth.gain.value = 0.035;
+      lfo.connect(depth);
+      depth.connect(bed.gain);
+      src.connect(high);
+      high.connect(band);
+      band.connect(bed);
+      bed.connect(react);
+      react.connect(this.master);
+      src.start();
+      lfo.start();
+      this.crowdGain = react;
+    },
+
+    roar() {
+      if (!this.crowdGain || !this.ctx) return;
+      const gain = this.crowdGain.gain;
+      const t = this.ctx.currentTime;
+      gain.cancelScheduledValues(t);
+      gain.setValueAtTime(Math.max(0.2, gain.value), t);
+      gain.linearRampToValueAtTime(1.8, t + 0.12);
+      gain.linearRampToValueAtTime(1, t + 1.6);
     },
   };
 
