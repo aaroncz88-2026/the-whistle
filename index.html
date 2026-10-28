@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="color-scheme" content="dark" />
+  <title>THE WHISTLE</title>
+  <link rel="icon" href="build/icon-32.png" />
+  <link rel="stylesheet" href="css/main.css" />
+</head>
+<body>
+  <div id="app">
+    <div id="stage">
+      <canvas id="view"></canvas>
+      <div id="grain"></div>
+    </div>
+    <header id="top"></header>
+    <div id="stamp" hidden></div>
+    <div id="flash"></div>
+    <footer id="dock"></footer>
+    <section id="overlay"></section>
+    <button id="mute" type="button" data-act="mute" aria-label="关闭声音">声</button>
+  </div>
+  <script src="js/audio.js"></script>
+  <script src="js/render.js"></script>
+  <script src="js/game.js"></script>
+</body>
+</html>
