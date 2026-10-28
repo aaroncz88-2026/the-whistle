@@ -115,6 +115,35 @@
     ];
   }
 
+  function ankleActors(t) {
+    const approach = smooth(0.12, 0.46, t);
+    const fall = smooth(0.5, 0.9, t);
+    const list = [
+      P({
+        x: lerp(760, 920, approach),
+        y: 752,
+        s: 1.62,
+        kit: "keel",
+        num: "4",
+        pose: t < 0.46 ? "run" : "slide",
+        phase: t * 2,
+      }),
+      P({
+        x: lerp(1080, 1000, fall),
+        y: 736,
+        s: 1.7,
+        kit: "mara",
+        num: "10",
+        pose: t < 0.5 ? "dribble" : "fall",
+        phase: t < 0.5 ? t * 2.2 : fall,
+        band: true,
+      }),
+      { type: "ball", x: lerp(1140, 1220, Math.max(approach, fall)), y: 768, z: fall * 36, s: 1.08 },
+    ];
+    if (t > 0.48 && t < 0.72) list.push({ type: "impact", x: 980, y: 700, a: 0.95 });
+    return list;
+  }
+
   function diveActors(t) {
     const chase = smooth(0, 0.4, t);
     const sell = smooth(0.62, 1, t);
@@ -165,6 +194,28 @@
       left: { x: 280, y: 690, zoom: 1.7 },
       center: { x: 900, y: 730, zoom: 1.48 },
       right: { x: 1480, y: 680, zoom: 1.55 },
+    },
+  };
+
+  const ankleCall = {
+    id: "ankle",
+    clock: "14:20",
+    kicker: "",
+    pitch: "box",
+    cameras: {
+      left: { x: 980, y: 820, zoom: 1.55 },
+      center: { x: 980, y: 820, zoom: 1.55 },
+      right: { x: 980, y: 820, zoom: 1.55 },
+    },
+    actors: ankleActors,
+    bestCard: null,
+    live(res) {
+      if (res.decision === "play") return "没有哨。10 号留在地上。";
+      return "哨响。铲到了脚踝。";
+    },
+    grade(res) {
+      if (res.decision === "foul") return pack(res, 10, "铲到脚踝。吹停是对的。");
+      return pack(res, 0, "脚穿到了人。这一下该停。");
     },
   };
 
@@ -288,15 +339,36 @@
     {
       id: 1,
       name: "看清楚",
-      blurb: "先分辨真接触和自己倒下去。",
-      pass: 12,
+      pass: 20,
       lookMs: 6800,
       callMs: 5600,
+      plain: true,
+      loopMs: 11000,
       hs: 0,
       as: 0,
+      blurb: "两下都在正面。先看脚有没有碰到人。",
       incidents: [
-        Object.assign({}, foulCall, { clock: "14:20" }),
-        diveCall,
+        ankleCall,
+        {
+          id: "dive",
+          clock: "27:15",
+          kicker: "",
+          pitch: "open",
+          cameras: {
+            left: { x: 960, y: 800, zoom: 1.55 },
+            center: { x: 960, y: 800, zoom: 1.55 },
+            right: { x: 960, y: 800, zoom: 1.55 },
+          },
+          actors(t) {
+            return diveActors(t).filter((actor) => actor.type !== "impact");
+          },
+          bestCard: null,
+          live: diveCall.live,
+          grade(res) {
+            if (res.decision === "play") return pack(res, 10, "脚没有到。人是自己倒下去的。");
+            return pack(res, 0, "没有接触。这一下不该吹。");
+          },
+        },
       ],
     },
     {
@@ -366,6 +438,7 @@
 
   function level() { return LEVELS[state.level]; }
   function current() { return level().incidents[state.index]; }
+  function isPlain() { return !!level().plain; }
 
   function beginPhase(phase, ms) {
     state.phase = phase;
@@ -445,12 +518,15 @@
     const inc = current();
     const n = `${state.index + 1} / ${lv.incidents.length}`;
     const kicker = state.phase === "look" ? inc.kicker : "";
+    const meta = isPlain() ? "" : `<small>LV ${lv.id}  ${lv.name}  ·  ${n}</small>`;
+    const eyes = isPlain() ? "" : `<div class="eyes" aria-hidden="true"><i data-eye="left"></i><i data-eye="center"></i><i data-eye="right"></i></div>`;
+    const kick = isPlain() ? "" : `<div id="kicker" class="${kicker ? "go" : ""}">${kicker}</div>`;
     return `<div class="hud"><div class="scorebug">
       <div class="team mara"><b>MARA</b><em>${lv.hs}</em></div>
-      <div class="clock"><small>LV ${lv.id}  ${lv.name}  ·  ${n}</small><strong>${inc.clock}</strong></div>
+      <div class="clock">${meta}<strong>${inc.clock}</strong></div>
       <div class="team keel"><em>${lv.as}</em><b>KEEL</b></div>
-      <div id="kicker" class="${kicker ? "go" : ""}">${kicker}</div>
-      <div class="eyes" aria-hidden="true"><i data-eye="left"></i><i data-eye="center"></i><i data-eye="right"></i></div>
+      ${kick}
+      ${eyes}
     </div></div>`;
   }
 
@@ -459,6 +535,12 @@
       return `<div class="hud beat"><p>${esc(state.line || "")}</p><span>空格跳过</span></div>`;
     }
     if (!["look", "call", "card"].includes(state.phase)) return "";
+    if (isPlain() && state.phase === "call") {
+      return `<div class="hud"><div class="actions call plain"><div class="calls two">
+        <button type="button" data-act="foul"><kbd>空格</kbd><span class="en">FOUL</span><span class="zh">吹停</span></button>
+        <button type="button" data-act="play"><kbd>C</kbd><span class="en">PLAY ON</span><span class="zh">继续</span></button>
+      </div></div></div>`;
+    }
     const label = state.phase === "look" ? "观察" : state.phase === "card" ? "出牌" : "判罚";
     let actions = "";
     if (state.phase === "look") actions = `<div class="actions look">${visor(true)}</div>`;
@@ -608,7 +690,7 @@
   }
 
   function scrub(dir) {
-    if (state.phase !== "call") return;
+    if (isPlain() || state.phase !== "call") return;
     const next = clamp(state.frame + dir, 0, FRAME_N - 1);
     if (next === state.frame) return;
     state.frame = next;
@@ -692,7 +774,12 @@
 
   function choose(decision) {
     if (state.phase !== "call" || state.locked) return;
+    if (isPlain() && decision === "advantage") return;
     state.locked = true;
+    if (isPlain()) {
+      const ms = level().loopMs;
+      state.holdT = ((performance.now() - state.since) % ms) / ms;
+    }
     const late = decision === "late";
     state.pending = {
       decision: late ? "play" : decision,
@@ -720,17 +807,27 @@
     showStamp(card);
   }
 
+  function beginOpen() {
+    state.phase = "call";
+    state.since = performance.now();
+    state.phaseTotal = level().loopMs;
+    state.until = 0;
+    document.body.dataset.phase = "call";
+  }
+
   function beginIncident() {
     state.camera = "center";
     state.seen = { left: false, center: true, right: false };
     state.frame = 0;
     state.studied = [];
+    state.holdT = null;
     state.locked = false;
     state.pending = null;
     state.committed = false;
     state.line = "";
     $("stamp").hidden = true;
-    beginPhase("look", level().lookMs);
+    if (isPlain()) beginOpen();
+    else beginPhase("look", level().lookMs);
     renderChrome();
   }
 
@@ -826,9 +923,10 @@
     if (name === "skip" && state.phase === "beat") return nextIncident();
     if (name === "prev") return scrub(-1);
     if (name === "next") return scrub(1);
-    if ((name === "left" || name === "center" || name === "right") && (state.phase === "look" || state.phase === "call")) {
+    if (!isPlain() && (name === "left" || name === "center" || name === "right") && (state.phase === "look" || state.phase === "call")) {
       return look(name);
     }
+    if (isPlain() && name === "advantage") return;
     if ((name === "foul" || name === "advantage" || name === "play") && state.phase === "call") return choose(name);
     if ((name === "verbal" || name === "yellow" || name === "red") && state.phase === "card") return chooseCard(name, false);
   }
@@ -891,6 +989,10 @@
   }
 
   function playT(now) {
+    if (isPlain()) {
+      if (state.phase === "call") return ((now - state.since) % level().loopMs) / level().loopMs;
+      if (state.holdT != null) return state.holdT;
+    }
     if (state.phase === "look") return clamp((now - state.since) / state.phaseTotal, 0, 1);
     return state.frame / (FRAME_N - 1);
   }

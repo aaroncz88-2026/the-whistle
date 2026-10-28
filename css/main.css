@@ -282,6 +282,16 @@ body[data-phase="stamp"] #dock {
   align-items: stretch;
 }
 
+.actions.call.plain {
+  display: flex;
+  justify-content: center;
+}
+
+.calls.two {
+  width: min(640px, 100%);
+  grid-template-columns: 1fr 1fr;
+}
+
 .actions.card { display: flex; justify-content: center; }
 
 .visor { display: flex; }
