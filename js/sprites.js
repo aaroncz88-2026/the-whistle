@@ -171,7 +171,9 @@
     const col = frame % COLS;
     const row = Math.floor(frame / COLS);
     const s = FRAME * UP;
-    ctx.drawImage(img, col * s, row * s, s, s, dx, dy, dw, dh);
+    const trim = frame === 30 ? 3 : 2;
+    const sh = (FRAME - trim) * UP;
+    ctx.drawImage(img, col * s, row * s, s, sh, dx, dy, dw, dh * ((FRAME - trim) / FRAME));
   }
 
   function player(ctx, p) {
@@ -185,8 +187,13 @@
     ctx.save();
     ctx.translate(p.x, p.y);
     ctx.scale(facing * sc, sc);
-    if (shadowImg) ctx.drawImage(shadowImg, -14, -6, 28, 10);
-    blit(ctx, sheet, frame, -16, -32, 32, 32);
+    const slide = frame === 30;
+    ctx.fillStyle = "rgba(4, 12, 8, 0.32)";
+    ctx.beginPath();
+    ctx.ellipse(slide ? 5 : 1, 1.5, slide ? 11 : 6.5, slide ? 1.8 : 1.5, 0, 0, Math.PI * 2);
+    ctx.fill();
+    const trim = slide ? 3 : 2;
+    blit(ctx, sheet, frame, -16, -31 + trim, 32, 32);
     if ((p.card || 0) > 0.2) {
       const lift = Math.max(0, Math.min(1, p.card));
       const y = -22 - lift * 6;

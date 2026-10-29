@@ -128,7 +128,7 @@
     const list = [
       P({
         x: footX,
-        y: fall < 0.55 ? ground - 14 : ground + 12,
+        y: ground,
         s: 1.6,
         kit: "mara",
         num: "10",
@@ -181,7 +181,7 @@
     const list = [
       P({
         x: defX,
-        y: ground - 2,
+        y: ground,
         s: 1.46,
         kit: "keel",
         num: "4",
@@ -194,7 +194,7 @@
       }),
       P({
         x: atkX,
-        y: ground - 8 + stumble * 6,
+        y: ground,
         s: 1.5,
         kit: "mara",
         num: "10",
