@@ -78,7 +78,7 @@ button:focus-visible,
   position: absolute;
   inset: -40px;
   pointer-events: none;
-  opacity: 0.2;
+  opacity: 0.05;
   mix-blend-mode: overlay;
   background-repeat: repeat;
 }

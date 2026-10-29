@@ -562,7 +562,7 @@
     for (let i = 0; i < img.data.length; i += 4) {
       const v = 190 + Math.random() * 65;
       img.data[i] = img.data[i + 1] = img.data[i + 2] = v;
-      img.data[i + 3] = 50;
+      img.data[i + 3] = 16;
     }
     g.putImageData(img, 0, 0);
     $("grain").style.backgroundImage = `url(${c.toDataURL("image/png")})`;
