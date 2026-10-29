@@ -122,8 +122,8 @@
     const through = smooth(0.34, 0.62, t);
     const fall = smooth(0.42, 0.74, t);
     const footX = 1100;
-    const defX = lerp(600, lerp(940, 1068, through), Math.max(runIn, drop));
-    const bootX = defX + 136;
+    const sc = 1.58 * 2.6;
+    const defX = lerp(600, footX - 14 * sc, Math.max(runIn, drop));
     const ballT = smooth(0.44, 0.8, t);
     const list = [
       P({
@@ -161,12 +161,6 @@
         s: 1.05,
       },
     ];
-    if (drop > 0.35) {
-      for (let i = 0; i < 4; i += 1) {
-        const fade = Math.max(0, 0.9 - i * 0.2) * (t < 0.78 ? 1 : 0.4);
-        list.push({ type: "dust", x: bootX - i * 42, y: ground + 8, a: fade });
-      }
-    }
     return list;
   }
 
@@ -177,7 +171,8 @@
     const stumble = smooth(0.32, 0.44, t) * (1 - smooth(0.5, 0.66, t));
     const run = smooth(0.02, 0.9, t);
     const atkX = lerp(860, 1340, run);
-    const defX = lerp(540, 900, chase);
+    const meet = lerp(860, 1340, smooth(0.02, 0.9, 0.36));
+    const defX = lerp(540, meet - 14 * 1.46 * 2.6, chase);
     const list = [
       P({
         x: defX,
@@ -213,10 +208,6 @@
         s: 1.05,
       },
     ];
-    if (t > 0.3 && t < 0.52) {
-      const a = t < 0.4 ? (t - 0.3) / 0.1 : 1 - (t - 0.4) / 0.12;
-      list.push({ type: "dust", x: defX + 128, y: ground + 8, a: Math.max(0, a) });
-    }
     return list;
   }
 

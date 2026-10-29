@@ -110,6 +110,48 @@
     return scale2x(scale2x(canvas));
   }
 
+  function clearTackleShadow(img) {
+    const c = document.createElement("canvas");
+    c.width = img.width;
+    c.height = img.height;
+    const g = c.getContext("2d");
+    g.drawImage(img, 0, 0);
+    const data = g.getImageData(0, 0, c.width, c.height);
+    const d = data.data;
+    const w = c.width;
+    const ox = (30 % COLS) * FRAME;
+    const oy = Math.floor(30 / COLS) * FRAME;
+    const dark = (x, y) => {
+      if (x < 0 || y < 0 || x >= FRAME || y >= FRAME) return false;
+      const i = ((oy + y) * w + (ox + x)) * 4;
+      return d[i + 3] > 20 && d[i] < 24 && d[i + 1] < 24 && d[i + 2] < 32;
+    };
+    const body = (x, y) => {
+      if (x < 0 || y < 0 || x >= FRAME || y >= FRAME) return false;
+      const i = ((oy + y) * w + (ox + x)) * 4;
+      return d[i + 3] > 20 && !dark(x, y);
+    };
+    const touchesBody = (x, y) => body(x - 1, y) || body(x + 1, y) || body(x, y - 1) || body(x, y + 1);
+    for (let y = 0; y < FRAME; y += 1) {
+      for (let x = 0; x < FRAME; x += 1) {
+        if (!dark(x, y)) continue;
+        if (y >= 24) {
+          if (!touchesBody(x, y)) d[((oy + y) * w + (ox + x)) * 4 + 3] = 0;
+          continue;
+        }
+        let keep = false;
+        for (let dy = -1; dy <= 1 && !keep; dy += 1) {
+          for (let dx = -1; dx <= 1; dx += 1) {
+            if (body(x + dx, y + dy)) keep = true;
+          }
+        }
+        if (!keep) d[((oy + y) * w + (ox + x)) * 4 + 3] = 0;
+      }
+    }
+    g.putImageData(data, 0, 0);
+    return c;
+  }
+
   function load(src) {
     return new Promise((resolve) => {
       const img = new Image();
@@ -123,7 +165,7 @@
     load("assets/soccer-ball.png"),
     load("assets/ball-shadow.png"),
   ]).then((imgs) => {
-    playerImg = imgs[0];
+    playerImg = clearTackleShadow(imgs[0]);
     const ballCanvas = document.createElement("canvas");
     ballCanvas.width = imgs[1].width;
     ballCanvas.height = imgs[1].height;
@@ -164,7 +206,7 @@
     const col = frame % COLS;
     const row = Math.floor(frame / COLS);
     const s = FRAME * UP;
-    const trim = frame === 30 ? 3 : 2;
+    const trim = 2;
     const sh = (FRAME - trim) * UP;
     ctx.drawImage(img, col * s, row * s, s, sh, dx, dy, dw, dh * ((FRAME - trim) / FRAME));
   }
@@ -176,12 +218,11 @@
     const sheet = sheets[p.kit] || sheets.mara;
     const frame = frameIndex(framesFor(p), p.phaseTo != null && (p.blend || 0) > 0.42 ? p.phaseTo : p.phase);
     const smooth = ctx.imageSmoothingEnabled;
-    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingEnabled = false;
     ctx.save();
     ctx.translate(p.x, p.y);
     ctx.scale(facing * sc, sc);
-    const trim = frame === 30 ? 3 : 2;
-    blit(ctx, sheet, frame, -16, -31 + trim, 32, 32);
+    blit(ctx, sheet, frame, -16, -30, 32, 32);
     if ((p.card || 0) > 0.2) {
       const lift = Math.max(0, Math.min(1, p.card));
       const y = -22 - lift * 6;
@@ -190,11 +231,8 @@
       ctx.fillStyle = "#fff6ea";
       ctx.fillRect(6, y + 1, 4, 1);
     }
-    if (p.band) {
-      ctx.fillStyle = "#5ef2e0";
-      ctx.fillRect(-2, -18, 4, 2);
-    }
     ctx.restore();
+    ctx.imageSmoothingEnabled = smooth;
     if (p.num && sc >= 3.2) {
       ctx.save();
       ctx.font = "700 16px Oswald, Impact, sans-serif";
@@ -221,7 +259,7 @@
     const sc = 2.1 * (a.s || 1);
     const frame = Math.floor(Math.abs((a.x || 0) + (a.y || 0)) / 18) % 4;
     const smooth = ctx.imageSmoothingEnabled;
-    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingEnabled = false;
     const by = a.y - (a.z || 0);
     if (ballShadowImg) ctx.drawImage(ballShadowImg, a.x - 10 * (a.s || 1), a.y - 4, 20 * (a.s || 1), 8 * (a.s || 1));
     ctx.drawImage(ballImg, frame * 10 * UP, 0, 10 * UP, 10 * UP, a.x - 5 * sc, by - 10 * sc, 10 * sc, 10 * sc);
