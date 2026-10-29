@@ -435,6 +435,10 @@
   }
 
   function drawPlayer(ctx, p) {
+    if (window.Sprites && Sprites.ready) {
+      Sprites.player(ctx, p);
+      return;
+    }
     const kit = KITS[p.kit] || KITS.mara;
     const base = poseOf(p.pose, p.phase || 0);
     const pose = p.poseTo ? mixPose(base, poseOf(p.poseTo, p.phaseTo == null ? p.phase || 0 : p.phaseTo), p.blend || 0) : base;
@@ -480,6 +484,7 @@
   }
 
   function drawBall(ctx, a) {
+    if (window.Sprites && Sprites.ready && Sprites.ball(ctx, a)) return;
     const r = 14 * (a.s || 1);
     ctx.beginPath();
     ctx.ellipse(a.x, a.y + 4, r * 1.2, r * 0.42, 0, 0, Math.PI * 2);
