@@ -22,7 +22,6 @@
   const sheets = {};
   let playerImg = null;
   let ballImg = null;
-  let shadowImg = null;
   let ballShadowImg = null;
   let ready = false;
 
@@ -122,7 +121,6 @@
   Promise.all([
     load("assets/soccer-player.png"),
     load("assets/soccer-ball.png"),
-    load("assets/player-shadow.png"),
     load("assets/ball-shadow.png"),
   ]).then((imgs) => {
     playerImg = imgs[0];
@@ -131,15 +129,10 @@
     ballCanvas.height = imgs[1].height;
     ballCanvas.getContext("2d").drawImage(imgs[1], 0, 0);
     ballImg = upscale(ballCanvas);
-    const shadowCanvas = document.createElement("canvas");
-    shadowCanvas.width = imgs[2].width;
-    shadowCanvas.height = imgs[2].height;
-    shadowCanvas.getContext("2d").drawImage(imgs[2], 0, 0);
-    shadowImg = upscale(shadowCanvas);
     const ballShadowCanvas = document.createElement("canvas");
-    ballShadowCanvas.width = imgs[3].width;
-    ballShadowCanvas.height = imgs[3].height;
-    ballShadowCanvas.getContext("2d").drawImage(imgs[3], 0, 0);
+    ballShadowCanvas.width = imgs[2].width;
+    ballShadowCanvas.height = imgs[2].height;
+    ballShadowCanvas.getContext("2d").drawImage(imgs[2], 0, 0);
     ballShadowImg = upscale(ballShadowCanvas);
     Object.keys(KITS).forEach((name) => {
       sheets[name] = tint(playerImg, KITS[name]);
@@ -187,12 +180,7 @@
     ctx.save();
     ctx.translate(p.x, p.y);
     ctx.scale(facing * sc, sc);
-    const slide = frame === 30;
-    ctx.fillStyle = "rgba(4, 12, 8, 0.32)";
-    ctx.beginPath();
-    ctx.ellipse(slide ? 5 : 1, 1.5, slide ? 11 : 6.5, slide ? 1.8 : 1.5, 0, 0, Math.PI * 2);
-    ctx.fill();
-    const trim = slide ? 3 : 2;
+    const trim = frame === 30 ? 3 : 2;
     blit(ctx, sheet, frame, -16, -31 + trim, 32, 32);
     if ((p.card || 0) > 0.2) {
       const lift = Math.max(0, Math.min(1, p.card));
