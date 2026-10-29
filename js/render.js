@@ -93,36 +93,35 @@
 
   function torsoPath(ctx) {
     ctx.beginPath();
-    ctx.moveTo(-18, -62);
-    ctx.quadraticCurveTo(-8, -84, 12, -76);
-    ctx.quadraticCurveTo(34, -64, 28, -36);
-    ctx.quadraticCurveTo(24, -8, 16, 2);
-    ctx.quadraticCurveTo(2, 16, -18, 2);
-    ctx.quadraticCurveTo(-28, -16, -18, -62);
+    ctx.moveTo(-14, 6);
+    ctx.quadraticCurveTo(-22, -28, -14, -58);
+    ctx.quadraticCurveTo(-4, -74, 12, -66);
+    ctx.quadraticCurveTo(24, -48, 18, -8);
+    ctx.quadraticCurveTo(12, 12, -6, 10);
     ctx.closePath();
   }
 
   function drawHead(ctx) {
-    clayBall(ctx, 0, -72, 7, SKIN);
-    clayBall(ctx, 2, -98, 19, SKIN);
+    clayBall(ctx, 0, -68, 5, SKIN);
+    clayBall(ctx, 1, -88, 12, SKIN);
     ctx.save();
     ctx.beginPath();
-    ctx.arc(1, -102, 17, Math.PI * 1.05, Math.PI * 1.95);
-    ctx.lineTo(1, -102);
+    ctx.arc(0, -92, 11, Math.PI * 1.08, Math.PI * 1.92);
+    ctx.lineTo(0, -90);
     ctx.closePath();
     ctx.clip();
-    clayBall(ctx, 0, -108, 16, "#2a241c");
+    clayBall(ctx, 0, -96, 11, "#2a241c");
     ctx.restore();
-    clayBall(ctx, -14, -96, 4.4, SKIN);
+    clayBall(ctx, -9, -86, 3.1, SKIN);
     ctx.beginPath();
-    ctx.arc(8, -98, 2.6, 0, Math.PI * 2);
+    ctx.arc(6, -88, 1.8, 0, Math.PI * 2);
     ctx.fillStyle = "rgba(42, 28, 20, 0.82)";
     ctx.fill();
     ctx.beginPath();
-    ctx.arc(7.2, -99, 0.9, 0, Math.PI * 2);
+    ctx.arc(5.4, -88.8, 0.7, 0, Math.PI * 2);
     ctx.fillStyle = "rgba(255, 246, 234, 0.7)";
     ctx.fill();
-    clayBall(ctx, 16, -92, 3.2, SKIN);
+    clayBall(ctx, 11, -84, 2.4, SKIN);
   }
 
   function drawFlag(ctx) {
@@ -138,18 +137,18 @@
     ctx.restore();
   }
 
-  const THIGH = 36;
-  const SHIN = 34;
-  const UPPER = 32;
-  const FORE = 24;
+  const THIGH = 50;
+  const SHIN = 42;
+  const UPPER = 34;
+  const FORE = 28;
 
   function tip(len, deg) {
     const a = (deg * Math.PI) / 180;
     return { x: Math.sin(a) * len, y: Math.cos(a) * len };
   }
 
-  function pose(lean, hipL, kneeL, hipR, kneeR, shoulderL, shoulderR) {
-    return { lean, hipL, kneeL, hipR, kneeR, shoulderL, shoulderR, elbow: 68 };
+  function pose(lean, hipL, kneeL, hipR, kneeR, shoulderL, shoulderR, elbow) {
+    return { lean, hipL, kneeL, hipR, kneeR, shoulderL, shoulderR, elbow: elbow == null ? 46 : elbow };
   }
 
   function mixPose(a, b, t) {
@@ -162,22 +161,23 @@
       n(a.hipR, b.hipR),
       n(a.kneeR, b.kneeR),
       n(a.shoulderL, b.shoulderL),
-      n(a.shoulderR, b.shoulderR)
+      n(a.shoulderR, b.shoulderR),
+      n(a.elbow == null ? 46 : a.elbow, b.elbow == null ? 46 : b.elbow)
     );
   }
 
   const RUN_LEG = [
-    [0, 48, 20],
-    [0.18, 6, 36],
-    [0.36, -30, 16],
-    [0.55, 40, 108],
-    [0.78, 52, 36],
-    [1, 48, 20],
+    [0, 30, 18],
+    [0.2, 8, 22],
+    [0.38, -18, 16],
+    [0.55, 4, 76],
+    [0.78, 22, 26],
+    [1, 30, 18],
   ];
   const RUN_ARM = [
-    [0, 58],
-    [0.5, -62],
-    [1, 58],
+    [0, 34],
+    [0.5, -20],
+    [1, 34],
   ];
 
   function sampleCycle(phase, keys) {
@@ -218,7 +218,7 @@
       case "dribble":
         return gait(phase, 8, 1, 1);
       case "slide":
-        return pose(6, -34, 102, 4, 12, -40, 24);
+        return pose(6, -34, 102, 4, 12, -28, 18, 10);
       case "strike":
         return pose(12, -18, 96, 70, 14, -22, 18);
       case "swept":
@@ -227,7 +227,7 @@
         return pose(-6, 8, 36, 18, 42, -8, 10);
       case "trip": {
         const u = Math.max(0, Math.min(1, phase));
-        return pose(10 + 12 * u, 6, 28 + 10 * u, 18, 32 + 8 * u, -8, 12);
+        return pose(7, -4, 16 + 62 * u, 20, 18, 14, -8);
       }
       case "sell": {
         const u = Math.max(0, Math.min(1, phase));
@@ -263,11 +263,10 @@
     return { knee, foot };
   }
 
-  function makeArm(shoulderDeg) {
+  function makeArm(shoulderDeg, flex) {
+    const bend = flex == null ? 46 : flex;
     const elbow = tip(UPPER, shoulderDeg);
-    let fore = shoulderDeg + 86;
-    if (fore > 98) fore = 98;
-    if (fore < 18) fore = 18;
+    const fore = shoulderDeg - bend;
     const hand = {
       x: elbow.x + tip(FORE, fore).x,
       y: elbow.y + tip(FORE, fore).y,
@@ -357,9 +356,9 @@
     const u = Math.max(0, Math.min(1, lift || 0));
     const ang = 28 + (168 - 28) * u;
     const arm = makeStraightArm(ang);
-    drawArm(ctx, 10, -50, arm, { shirt: "#161b22" });
+    drawArm(ctx, 8, -58, arm, { shirt: "#2c3138" });
     if (u < 0.42) return;
-    const hand = { x: 10 + arm.hand.x, y: -50 + arm.hand.y };
+    const hand = { x: 8 + arm.hand.x, y: -58 + arm.hand.y };
     ctx.save();
     ctx.translate(hand.x, hand.y);
     ctx.rotate(-0.08);
@@ -378,23 +377,23 @@
     drawLegParts(ctx, 0, hipY, backLeg, kit);
 
     ctx.beginPath();
-    ctx.moveTo(-24, hipY - 4);
-    ctx.quadraticCurveTo(-6, hipY - 20, 18, hipY - 6);
-    ctx.quadraticCurveTo(26, hipY + 12, 14, hipY + 28);
-    ctx.quadraticCurveTo(0, hipY + 38, -18, hipY + 24);
-    ctx.quadraticCurveTo(-30, hipY + 10, -24, hipY - 4);
+    ctx.moveTo(-18, hipY - 2);
+    ctx.quadraticCurveTo(-6, hipY - 14, 14, hipY - 2);
+    ctx.quadraticCurveTo(20, hipY + 8, 8, hipY + 16);
+    ctx.quadraticCurveTo(-2, hipY + 20, -14, hipY + 14);
+    ctx.quadraticCurveTo(-24, hipY + 6, -18, hipY - 2);
     ctx.closePath();
-    clayFill(ctx, kit.short, -20, hipY - 18, 16, hipY + 34);
+    clayFill(ctx, kit.short, -16, hipY - 12, 14, hipY + 18);
 
     ctx.save();
     ctx.translate(0, hipY);
     ctx.rotate((pose.lean * Math.PI) / 180);
 
-    const armA = makeArm(pose.shoulderL);
-    const armB = makeArm(pose.shoulderR);
+    const armA = makeArm(pose.shoulderL, pose.elbow);
+    const armB = makeArm(pose.shoulderR, pose.elbow);
     const backArm = pose.shoulderL <= pose.shoulderR ? armA : armB;
     const frontArm = pose.shoulderL <= pose.shoulderR ? armB : armA;
-    drawArm(ctx, -2, -58, backArm, kit);
+    drawArm(ctx, 0, -60, backArm, kit);
 
     torsoPath(ctx);
     clayFill(ctx, kit.shirt, -16, -82, 20, 8);
@@ -409,7 +408,7 @@
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
       ctx.fillStyle = kit.num;
-      ctx.fillText(String(p.num), 1, -34);
+      ctx.fillText(String(p.num), 2, -32);
     }
     if (p.band) {
       ctx.fillStyle = "#5ef2e0";
@@ -419,7 +418,7 @@
     drawHead(ctx);
     if (p.flag) drawFlag(ctx);
     if ((p.card || 0) > 0.02) drawRaisedCard(ctx, p.card);
-    else drawArm(ctx, 4, -56, frontArm, kit);
+    else drawArm(ctx, 2, -58, frontArm, kit);
     ctx.restore();
 
     drawLegParts(ctx, 1, hipY, frontLeg, kit);

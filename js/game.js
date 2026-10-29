@@ -122,8 +122,8 @@
     const through = smooth(0.34, 0.62, t);
     const fall = smooth(0.42, 0.74, t);
     const footX = 1100;
-    const defX = lerp(600, lerp(960, 1088, through), Math.max(runIn, drop));
-    const bootX = defX + 118;
+    const defX = lerp(600, lerp(940, 1068, through), Math.max(runIn, drop));
+    const bootX = defX + 136;
     const ballT = smooth(0.44, 0.8, t);
     const list = [
       P({
@@ -172,48 +172,51 @@
 
   function diveFrontActors(t) {
     const ground = 792;
-    const chase = smooth(0.02, 0.32, t);
-    const miss = smooth(0.28, 0.46, t);
-    const fall = smooth(0.5, 0.78, t);
-    const carry = smooth(0.52, 0.94, t);
-    const atkX = 1188;
-    const slideX = 900;
-    const up = carry > 0.18;
-    const defX = up ? lerp(slideX, 1520, (carry - 0.18) / 0.82) : lerp(660, slideX, Math.max(chase, miss));
-    const onGround = miss > 0.22 && !up;
+    const chase = smooth(0.05, 0.36, t);
+    const clip = smooth(0.28, 0.42, t);
+    const stumble = smooth(0.32, 0.44, t) * (1 - smooth(0.5, 0.66, t));
+    const run = smooth(0.02, 0.9, t);
+    const atkX = lerp(860, 1340, run);
+    const defX = lerp(540, 900, chase);
     const list = [
       P({
-        x: atkX,
-        y: ground + 4,
-        s: 1.58,
-        kit: "mara",
-        num: "9",
-        pose: "dribble",
-        poseTo: "swept",
-        blend: fall,
-        phase: t * 2.2,
-        phaseTo: 1,
-        pitch: fall,
-        band: true,
-      }),
-      P({
         x: defX,
-        y: ground - 6,
-        s: 1.52,
+        y: ground - 2,
+        s: 1.46,
         kit: "keel",
         num: "4",
-        pose: onGround ? "slide" : "run",
-        phase: onGround ? 1 : t * 2.4 + carry,
-        slide: onGround ? Math.max(miss, 0.2) : 0,
+        pose: "run",
+        poseTo: "slide",
+        blend: clip,
+        phase: t * 2.1,
+        phaseTo: 1,
+        slide: t > 0.4 ? 1 : clip,
+      }),
+      P({
+        x: atkX,
+        y: ground - 8 + stumble * 6,
+        s: 1.5,
+        kit: "mara",
+        num: "10",
+        pose: "dribble",
+        poseTo: "trip",
+        blend: stumble,
+        phase: t * 2.2,
+        phaseTo: stumble,
+        band: true,
       }),
       {
         type: "ball",
-        x: up ? lerp(1160, defX + 36, Math.min(1, (carry - 0.18) / 0.5)) : lerp(1100, 1148, miss),
-        y: ground + 6,
-        z: 8,
+        x: atkX + 40,
+        y: ground + 4,
+        z: 6 + stumble * 10,
         s: 1.05,
       },
     ];
+    if (t > 0.3 && t < 0.52) {
+      const a = t < 0.4 ? (t - 0.3) / 0.1 : 1 - (t - 0.4) / 0.12;
+      list.push({ type: "dust", x: defX + 128, y: ground + 8, a: Math.max(0, a) });
+    }
     return list;
   }
 
@@ -447,7 +450,7 @@
       loopMs: 5000,
       hs: 0,
       as: 0,
-      blurb: "看脚有没有铲到人。没碰到，人倒了，对方还带着球往前，就继续。",
+      blurb: "第一下人被铲倒，要吹。第二下碰到了，人没倒，球还在往前，不吹。",
       incidents: [
         ankleCall,
         {
@@ -456,19 +459,19 @@
           kicker: "",
           pitch: "open",
           cameras: {
-            left: { x: 1120, y: 760, zoom: 1.02 },
-            center: { x: 1120, y: 760, zoom: 1.02 },
-            right: { x: 1120, y: 760, zoom: 1.02 },
+            left: { x: 1100, y: 760, zoom: 0.98 },
+            center: { x: 1100, y: 760, zoom: 0.98 },
+            right: { x: 1100, y: 760, zoom: 0.98 },
           },
           actors: diveFrontActors,
           bestCard: null,
           live(res) {
-            if (res.decision === "foul") return "哨响。脚是空的，4 号还带着球。";
-            return "没有哨。人倒了，球还在往前走。";
+            if (res.decision === "foul") return "哨响。球还在 10 号脚下，被你停了。";
+            return "没有哨。脚碰到了，人还带着球往前。";
           },
           grade(res) {
-            if (res.decision === "play") return pack(res, 10, "没碰到。人自己倒了，对方带着球继续进攻。");
-            return pack(res, 0, "脚没碰到。对方还在进攻，这一下不该停。");
+            if (res.decision === "play") return pack(res, 10, "有犯规。人没倒，球还在走，这一下不吹。");
+            return pack(res, 0, "碰到了，但进攻还在。不该吹停。");
           },
         },
       ],
